@@ -9,12 +9,12 @@
 #include <unordered_set>
 #include <vector>
 
+#include "cacheFilenames.hpp"
 #include "command.hpp"
 #include "createFont.hpp"
 #include "filesUtils.hpp"
 #include "parseArguments.hpp"
 #include "typesDefinition.hpp"
-#include "cacheFilenames.hpp"
 
 SdlWindow createSdlWindow(const WindowSettings& windowSettings);
 SdlRenderer createSdlRenderer(const SdlWindow& sdlWindow);
@@ -23,11 +23,9 @@ SdlTexture createTexture(SDL_Texture* texture);
 std::optional<SdlTexture> createTexture(const SdlRenderer& renderer,
                                         const std::string& filename);
 
-std::optional<SdlTexture> createThumbnailWithSize(const SdlRenderer& renderer,
-                                                  const std::string& filename,
-                                                  int maxWidth, int maxHeight,
-                                                  int& returnWidht,
-                                                  int& returnHeight);
+std::optional<SdlTexture> createThumbnailWithSize(
+    const SdlRenderer& renderer, const std::string& filename, int maxWidth,
+    int maxHeight, int& returnWidht, int& returnHeight, long& returnMemory);
 
 SdlTexture createThumbnail(const SdlRenderer& renderer,
                            const SdlTexture& texture, int maxWidth,
@@ -94,17 +92,20 @@ class ImageLoaderPolicy {
                 return;
             }
             int width, height;
+			long memory;
             auto thumbnail = createThumbnailWithSize(
                 sdlContext.renderer, sdlContext.imagesVector[index].fileAdress,
-                100, 100, width, height);
+                100, 100, width, height, memory);
             lastLoadedThumbnail += 1;
             loadedThumbnails[index] = true;
             if (!thumbnail) {
                 return;
             }
+
             sdlContext.imagesVector[index].thumbnail = std::move(thumbnail);
             sdlContext.imagesVector[index].width     = width;
             sdlContext.imagesVector[index].height    = height;
+            sdlContext.imagesVector[index].memory     = memory;
         };
 
         const auto& [rFirstIt, lastIt] = getFrontierIterators();
@@ -513,8 +514,8 @@ class ImageViewerApp {
                 SDL_Delay(TARGET_FRAME_DELAY - elapsedTime);
             }
         }
-		CacheFilenames cacheFilenames;
-		cacheFilenames.saveActualImagePosition(sdlContext);
+        CacheFilenames cacheFilenames;
+        cacheFilenames.saveActualImagePosition(sdlContext);
     }
 
   private:
@@ -548,21 +549,21 @@ int main(int argc, char* argv[]) {
     SdlContext context{std::move(window), std::move(renderer), std::move(font),
                        setting};
     context.style = style;
-	CacheFilenames cacheFilenames;
-	context.currentImage = cacheFilenames.existsString(files);
-	if(files.size() == 0){
-		return;
-	}
+    CacheFilenames cacheFilenames;
+    context.currentImage = cacheFilenames.existsString(files);
+    if (files.size() == 0) {
+        return;
+    }
     context.imagesVector.reserve(files.size());
     for (auto& filename : files) {
         ImageHeader ih;
         ih.fileAdress = std::move(filename);
         context.imagesVector.emplace_back(std::move(ih));
     }
-	if(context.imagesVector.size() >= 0){
-		if(context.imagesVector.size() == 1){
-			context.isGridImages = false;
-		}
+    if (context.imagesVector.size() >= 0) {
+        if (context.imagesVector.size() == 1) {
+            context.isGridImages = false;
+        }
         ImageViewerApp app(std::move(context));
         app.mainLoop();
     }
@@ -575,17 +576,16 @@ int main(int argc, char* argv[]) {
 //********************* Implementation *************************
 //**************************************************************
 
-std::optional<SdlTexture> createThumbnailWithSize(const SdlRenderer& renderer,
-                                                  const std::string& filename,
-                                                  int maxWidth, int maxHeight,
-                                                  int& returnWidht,
-                                                  int& returnHeight) {
+std::optional<SdlTexture> createThumbnailWithSize(
+    const SdlRenderer& renderer, const std::string& filename, int maxWidth,
+    int maxHeight, int& returnWidht, int& returnHeight, long& returnMemory) {
     auto texture = createTexture(renderer, filename);
     if (!texture) {
         return std::nullopt;
     }
     SDL_Point size;
     SDL_QueryTexture(texture.value().get(), NULL, NULL, &size.x, &size.y);
+    returnMemory = std::filesystem::file_size(filename);
     returnWidht  = size.x;
     returnHeight = size.y;
     return createThumbnail(renderer, texture.value(), maxWidth, maxHeight);

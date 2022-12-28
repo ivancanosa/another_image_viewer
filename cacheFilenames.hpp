@@ -27,15 +27,15 @@ class CacheFilenames {
         }
 
         // Create the "iv" directory if it doesn't already exist
-        std::string iv_dir = cache_dir + "/iv";
-        int mkdir_result   = mkdir(iv_dir.c_str(), 0700);
+        std::string aiv_dir = cache_dir + "/aiv";
+        int mkdir_result   = mkdir(aiv_dir.c_str(), 0700);
         if (mkdir_result != 0 && errno != EEXIST) {
-            std::cerr << "Error creating directory '" << iv_dir
+            std::cerr << "Error creating directory '" << aiv_dir
                       << "': " << strerror(errno) << std::endl;
             return;
         }
 
-        filename = iv_dir + "/imageNamesCache";
+        filename = aiv_dir + "/imageNamesCache";
     }
     std::size_t existsString(const std::vector<std::string>& vector);
     void saveActualImagePosition(const SdlContext& sdlContext);
