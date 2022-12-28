@@ -1,10 +1,20 @@
 # Another mage viewer
 An image viewer implementation using C++17 and SDL2. It is heavily inspired on sxiv.
 
-## Requirements
+## Features
+<img src="gridView.png" width="50%" height="50%">
+<img src="imageView.png" width="50%" height="50%">
+
+- Keyboard input only. Vim-like commands.
+- When the program is closed, it will resume to the same image position when opened again with similar argumennts.
+
+## Usage
+The command is "aiv". You can insert as command line arguments the filenames or directories for it to search images. You can also input the filenames or directories by pipeline.
+
+## Requirements to compile
 clang 14.00+, meson, Make, Linux system.
 
-## Shortkeys:
+## Keyboard input:
 ### General:
 - f: toggle fullscreen
 - n: next image
