@@ -1,4 +1,4 @@
-# Another mage viewer
+# Another image viewer
 An image viewer implementation using C++17 and SDL2. It is heavily inspired on sxiv.
 
 ## Features
