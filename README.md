@@ -43,7 +43,7 @@ clang 14.00+, meson, Make, Linux system.
 - e: fit image to the width of the window
 - E: fit image to the height of the window
 - <: rotate left
-- <: rotate right
+- >: rotate right
 	
 ## Commands
 - make: builds the project
