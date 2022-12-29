@@ -395,10 +395,10 @@ void ImageViewerApp::drawImageViewerContiguous() {
 
     // Only checks vertical axis
     const auto& isRectInsideWindow = [&](const auto& rect) {
-        auto h0 = rect.x;
-        auto h1 = rect.x + rect.h;
-        return ((h0 > windowRect.x && h0 <= windowRect.y + windowRect.h) ||
-                (h1 >= windowRect.x && h1 <= windowRect.y + windowRect.h));
+        auto h0 = rect.y;
+        auto h1 = rect.y + rect.h;
+        return ((h0 > windowRect.y && h0 <= windowRect.y + windowRect.h) ||
+                (h1 >= windowRect.y && h1 <= windowRect.y + windowRect.h));
     };
 
     const auto maybeChangeCurrentImage = [&](auto index, auto yPos,
@@ -413,7 +413,7 @@ void ImageViewerApp::drawImageViewerContiguous() {
     // Return true if the drawed image was inside the window
     const auto& drawImage = [&](const auto& index, auto accHeight,
                                 auto center) {
-        const auto& image = sdlContext.imagesVector[index];
+        auto& image       = sdlContext.imagesVector[index];
         float aspectRatio = (float)image.height / image.width;
         auto drawHeight   = windowHeight * zoom;
         auto drawWidth    = drawHeight / aspectRatio;
@@ -429,16 +429,22 @@ void ImageViewerApp::drawImageViewerContiguous() {
         if (!center) {
             maybeChangeCurrentImage(index, yPos, drawHeight);
         }
-        if (!image.image) {
-            return true;
-        }
-        SDL_RenderCopy(renderer.get(), image.image.value().get(), nullptr,
-                       &imageRect);
-        if (isRectInsideWindow(imageRect)) {
-            return true;
+        if (image.image) {
+            SDL_RenderCopy(renderer.get(), image.image.value().get(), nullptr,
+                           &imageRect);
+        } else if (image.animation) {
+            SDL_RenderCopy(renderer.get(),
+                           image.animation.value()
+                               .frames[image.animation.value().actualFrame]
+                               .get(),
+                           nullptr, &imageRect);
+            image.animation.value().actualFrame =
+                (image.animation.value().actualFrame + 1) %
+                image.animation.value().frames.size();
         } else {
             return false;
         }
+		return isRectInsideWindow(imageRect);
     };
 
     const auto& fordwardDraw = [&](auto index) {

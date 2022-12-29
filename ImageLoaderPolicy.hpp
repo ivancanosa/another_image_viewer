@@ -119,6 +119,8 @@ void ImageLoaderPolicy::loadInViewer(SdlContext& sdlContext) {
                 sdlContext.imagesVector[index].height = size.y;
                 loadedImages.insert(index);
             }
+        } else {
+            loadedImages.insert(index);
         }
     };
 
