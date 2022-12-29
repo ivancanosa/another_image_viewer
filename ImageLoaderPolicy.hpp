@@ -1,6 +1,7 @@
 #pragma once
-#include "typesDefinition.hpp"
+
 #include "sdlUtils.hpp"
+#include "typesDefinition.hpp"
 
 class ImageLoaderPolicy {
   public:
@@ -13,7 +14,7 @@ class ImageLoaderPolicy {
 
   private:
     std::vector<bool> loadedThumbnails;
-    std::vector<std::size_t> loadedImages;
+    std::unordered_set<std::size_t> loadedImages;
     int lastCurrentImage{-1};
     int lastLoadedThumbnail{-1};
     int lastLoadedImage{-1};
@@ -97,12 +98,9 @@ void ImageLoaderPolicy::loadInGrid(SdlContext& sdlContext) {
 }
 
 void ImageLoaderPolicy::loadInViewer(SdlContext& sdlContext) {
-    int index = sdlContext.currentImage;
-    if (lastLoadedImage != index) {
-        if (lastLoadedImage != -1) {
-            sdlContext.imagesVector[lastLoadedImage].image     = std::nullopt;
-            sdlContext.imagesVector[lastLoadedImage].animation = std::nullopt;
-        }
+    std::vector<std::size_t> elementsToErase;
+
+    const auto loadImage = [&](const auto& index) {
         if (!loadGifAnimation(sdlContext.renderer,
                               sdlContext.imagesVector[index])) {
             auto texture = createTexture(
@@ -119,9 +117,34 @@ void ImageLoaderPolicy::loadInViewer(SdlContext& sdlContext) {
                 sdlContext.imagesVector[index].memory = memory;
                 sdlContext.imagesVector[index].width  = size.x;
                 sdlContext.imagesVector[index].height = size.y;
+                loadedImages.insert(index);
             }
         }
-        lastLoadedImage = index;
+    };
+
+    const auto unloadImage = [&](const auto& index) {
+        sdlContext.imagesVector[index].image     = std::nullopt;
+        sdlContext.imagesVector[index].animation = std::nullopt;
+        auto it                                  = loadedImages.find(index);
+        if (it != loadedImages.end()) {
+            elementsToErase.push_back(*it);
+        }
+    };
+
+    for (auto& toLoad : sdlContext.imagesToLoad) {
+        if (loadedImages.find(toLoad) == loadedImages.end()) {
+            loadImage(toLoad);
+        }
+    }
+
+    for (auto& toUnload : loadedImages) {
+        if (sdlContext.imagesToLoad.find(toUnload) == loadedImages.end()) {
+            unloadImage(toUnload);
+        }
+    }
+
+    for (auto& element : elementsToErase) {
+        loadedImages.erase(element);
     }
 }
 

@@ -82,6 +82,7 @@ struct SdlContext {
     ImageViewerState imageViewerState;
 
     std::vector<ImageHeader> imagesVector;
+	std::unordered_set<std::size_t> imagesToLoad;
     bool isGridImages{true};
     bool showBar{true};
 	int fps{24};

@@ -386,6 +386,9 @@ void ImageViewerApp::mainLoop() {
         }
         preInputProcessing();
         maybeToggleFullscreen();
+
+		sdlContext.imagesToLoad.clear();
+		sdlContext.imagesToLoad.insert(sdlContext.currentImage);
         imageLoaderPolicy.loadNext(sdlContext);
         SDL_RenderClear(sdlContext.renderer.get());
         if (sdlContext.isGridImages) {
