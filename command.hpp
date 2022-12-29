@@ -45,6 +45,8 @@ void rotateLeft(SdlContext& sdlContext, int num);
 void zoomUpViewer(SdlContext& sdlContext, int num);
 void zoomDownViewer(SdlContext& sdlContext, int num);
 
+void toggleContiguousView(SdlContext& sdlContext, int num);
+
 class CommandExecuter {
   public:
     CommandExecuter()
@@ -64,6 +66,7 @@ class CommandExecuter {
               {"h", moveLeftViewer}, {"l", moveRightViewer},
               {"e", fitWidth},       {"E", fitHeight},
               {">", rotateRight},    {"<", rotateLeft},
+			  {"c", toggleContiguousView}
           } {
 
         const auto identity = [](const auto& arg) { return arg; };
@@ -315,4 +318,8 @@ void zoomDownViewer(SdlContext& sdlContext, int num) {
     sdlContext.imageViewerState.fitHeight = false;
     sdlContext.imageViewerState.fitWidth  = false;
     sdlContext.imageViewerState.zoom *= 1 / 1.2;
+}
+
+void toggleContiguousView(SdlContext& sdlContext, int num){
+	sdlContext.contiguousView = !sdlContext.contiguousView;
 }

@@ -66,8 +66,8 @@ struct ImageHeader {
     std::optional<SdlAnimation> animation{std::nullopt};
 
     long memory{10};
-    int width{10};
-    int height{10};
+    int width{6000};
+    int height{6000};
     std::string fileAdress{""};
 };
 
@@ -85,6 +85,7 @@ struct SdlContext {
 	std::unordered_set<std::size_t> imagesToLoad;
     bool isGridImages{true};
     bool showBar{true};
+	bool contiguousView{false};
 	int fps{24};
     int currentImage{0};
     bool exit{false};

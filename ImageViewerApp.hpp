@@ -21,8 +21,11 @@ class ImageViewerApp {
     void preInputProcessing();
     void getInputCommand();
 
+    void setImagesToLoad();
+
     void drawGrid();
     void drawImageViewer();
+    void drawImageViewerContiguous();
 
     void mainLoop();
 
@@ -377,6 +380,96 @@ void ImageViewerApp::drawImageViewer() {
     }
 }
 
+void ImageViewerApp::drawImageViewerContiguous() {
+    const auto& renderer = sdlContext.renderer;
+    auto& images = sdlContext.imagesVector; // vector of images to be drawn
+    const auto& imageViewerState = sdlContext.imageViewerState;
+
+    // Get the window size
+    int windowWidth, windowHeight;
+    SDL_GetWindowSize(sdlContext.window.get(), &windowWidth, &windowHeight);
+
+    // Calculate the total height of all images
+    int totalHeight = 0;
+    for (const auto& image : images) {
+        totalHeight += image.height;
+    }
+
+    // Calculate the width and height of the images to be drawn
+    int drawWidth = windowWidth, drawHeight = 0;
+    float zoom = imageViewerState.zoom;
+    if (totalHeight * zoom > windowHeight) {
+        // If the combined height of all images is greater than the window
+        // height, allow vertical panning
+        drawHeight = windowHeight;
+        zoom       = (float)drawHeight /
+               totalHeight; // recalculate zoom to fit the window height
+    } else {
+        // If the combined height of all images is not greater than the window
+        // height, center them vertically
+        drawHeight = (int)(totalHeight * zoom);
+    }
+
+    // Calculate the x and y position of the images to be drawn
+    int xPos = (windowWidth - drawWidth) / 2;
+    int yPos = (windowHeight - drawHeight) / 2 +
+               imageViewerState.panningY; // allow vertical panning
+
+    // Create a SDL_Rect for the images to be drawn
+    SDL_Rect imagesRect{xPos, yPos, drawWidth, drawHeight};
+
+    // Loop through the images and render them to the window
+    int currentY = 0; // keep track of the current y position
+    std::size_t index{0};
+    for (const auto& image : images) {
+        // Calculate the height and width of the current image to be drawn based
+        // on its aspect ratio
+        float aspectRatio = (float)image.width / image.height;
+        int currentHeight = (int)(drawWidth / aspectRatio);
+        int currentWidth  = drawWidth;
+        if (currentHeight > drawHeight) {
+            // If the calculated height is greater than the drawHeight, adjust
+            // the width instead
+            currentWidth  = (int)(drawHeight * aspectRatio);
+            currentHeight = drawHeight;
+        }
+
+        // Check if the current image is partially or fully within the window
+        if (currentY + currentHeight >= -imageViewerState.panningY &&
+            currentY <= -imageViewerState.panningY + windowHeight) {
+            sdlContext.imagesToLoad.insert(index);
+            // The current image is partially or fully within the window, so
+            // render it
+            if (image.image) {
+				xPos = (windowWidth - currentWidth) / 2;
+                SDL_Rect imageRect{xPos, yPos + currentY, currentWidth,
+                                   currentHeight};
+                SDL_RenderCopy(renderer.get(), image.image.value().get(),
+                               nullptr, &imageRect);
+            }
+        } else {
+            sdlContext.imagesToLoad.erase(index);
+        }
+
+        // Update the current y position
+        currentY += currentHeight;
+        index += 1;
+    }
+}
+
+void ImageViewerApp::setImagesToLoad() {
+    if (sdlContext.isGridImages) {
+        sdlContext.imagesToLoad.clear();
+        return;
+    }
+    if (sdlContext.contiguousView) {
+        // Do nothing here
+    } else {
+        sdlContext.imagesToLoad.clear();
+        sdlContext.imagesToLoad.insert(sdlContext.currentImage);
+    }
+}
+
 void ImageViewerApp::mainLoop() {
     while (!sdlContext.exit) {
         Uint32 frameStartTime = SDL_GetTicks();
@@ -386,15 +479,15 @@ void ImageViewerApp::mainLoop() {
         }
         preInputProcessing();
         maybeToggleFullscreen();
-
-		sdlContext.imagesToLoad.clear();
-		sdlContext.imagesToLoad.insert(sdlContext.currentImage);
+        setImagesToLoad();
         imageLoaderPolicy.loadNext(sdlContext);
         SDL_RenderClear(sdlContext.renderer.get());
         if (sdlContext.isGridImages) {
             drawGrid();
-        } else {
+        } else if (!sdlContext.contiguousView) {
             drawImageViewer();
+        } else if (sdlContext.contiguousView) {
+            drawImageViewerContiguous();
         }
         drawBottomBar();
         SDL_SetRenderDrawColor(sdlContext.renderer.get(), 30, 30, 30, 0x00);
