@@ -7,6 +7,7 @@ An image viewer implementation using C++17 and SDL2. It is heavily inspired on s
 
 - Keyboard input only. Vim-like commands.
 - Rendering of gif animations.
+- Continuum view mode. You are able to scroll from top to bottom to see the images in a continuum way.
 - When the program is closed, it will resume to the same image position when opened again with similar arguments. The way it works is that when you close the image viewer, is saves the path of the current image to a cache file. When you open it again and one of the input filenames matches a string in the cache, it moves the cursor to that image.
 
 
@@ -46,6 +47,7 @@ clang 14.00+, meson, Make, Linux system.
 - E: fit image to the height of the window
 - <: rotate left
 - \>: rotate right
+- c: Toggle between single image view to continuum view of multiple images in a vertical line from top to bottom.
 	
 ## Commands
 - make: builds the project
@@ -54,5 +56,4 @@ clang 14.00+, meson, Make, Linux system.
 
 ## TODO
 - set/unset bilinear interpolation as command line argument
-- New view mode: Continuous. It renders all images in a vertical or horizontal line, contiguous to each other.
 - Change "cacheFilenames.hpp" so it also works on windows

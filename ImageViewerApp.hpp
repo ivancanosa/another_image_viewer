@@ -381,80 +381,111 @@ void ImageViewerApp::drawImageViewer() {
 }
 
 void ImageViewerApp::drawImageViewerContiguous() {
-    const auto& renderer = sdlContext.renderer;
-    auto& images = sdlContext.imagesVector; // vector of images to be drawn
-    const auto& imageViewerState = sdlContext.imageViewerState;
-
     // Get the window size
     int windowWidth, windowHeight;
     SDL_GetWindowSize(sdlContext.window.get(), &windowWidth, &windowHeight);
+    const auto& renderer = sdlContext.renderer;
+    float zoom           = sdlContext.imageViewerState.zoom;
+    SDL_Rect windowRect{0, 0, windowWidth, windowHeight};
 
-    // Calculate the total height of all images
-    int totalHeight = 0;
-    for (const auto& image : images) {
-        totalHeight += image.height;
-    }
+    //    sdlContext.imagesToLoad.clear();
 
-    // Calculate the width and height of the images to be drawn
-    int drawWidth = windowWidth, drawHeight = 0;
-    float zoom = imageViewerState.zoom;
-    if (totalHeight * zoom > windowHeight) {
-        // If the combined height of all images is greater than the window
-        // height, allow vertical panning
-        drawHeight = windowHeight;
-        zoom       = (float)drawHeight /
-               totalHeight; // recalculate zoom to fit the window height
-    } else {
-        // If the combined height of all images is not greater than the window
-        // height, center them vertically
-        drawHeight = (int)(totalHeight * zoom);
-    }
+    int newCurrentImage = sdlContext.currentImage;
+    int currentImageDy  = 0.;
 
-    // Calculate the x and y position of the images to be drawn
-    int xPos = (windowWidth - drawWidth) / 2;
-    int yPos = (windowHeight - drawHeight) / 2 +
-               imageViewerState.panningY; // allow vertical panning
+    // Only checks vertical axis
+    const auto& isRectInsideWindow = [&](const auto& rect) {
+        auto h0 = rect.x;
+        auto h1 = rect.x + rect.h;
+        return ((h0 > windowRect.x && h0 <= windowRect.y + windowRect.h) ||
+                (h1 >= windowRect.x && h1 <= windowRect.y + windowRect.h));
+    };
 
-    // Create a SDL_Rect for the images to be drawn
-    SDL_Rect imagesRect{xPos, yPos, drawWidth, drawHeight};
-
-    // Loop through the images and render them to the window
-    int currentY = 0; // keep track of the current y position
-    std::size_t index{0};
-    for (const auto& image : images) {
-        // Calculate the height and width of the current image to be drawn based
-        // on its aspect ratio
-        float aspectRatio = (float)image.width / image.height;
-        int currentHeight = (int)(drawWidth / aspectRatio);
-        int currentWidth  = drawWidth;
-        if (currentHeight > drawHeight) {
-            // If the calculated height is greater than the drawHeight, adjust
-            // the width instead
-            currentWidth  = (int)(drawHeight * aspectRatio);
-            currentHeight = drawHeight;
+    const auto maybeChangeCurrentImage = [&](auto index, auto yPos,
+                                             auto drawHeight) {
+        auto dy = std::abs(windowHeight / 2. - (yPos + drawHeight / 2.));
+        if (dy <= currentImageDy) {
+            newCurrentImage = index;
+            currentImageDy  = dy;
         }
+    };
 
-        // Check if the current image is partially or fully within the window
-        if (currentY + currentHeight >= -imageViewerState.panningY &&
-            currentY <= -imageViewerState.panningY + windowHeight) {
+    // Return if is was able to draw image and the acc height
+    const auto& drawImage = [&](const auto& index, auto accHeight,
+                                auto center){
+        const auto& image = sdlContext.imagesVector[index];
+        float aspectRatio = (float)image.height / image.width;
+        auto drawHeight   = windowHeight * zoom;
+        auto drawWidth    = drawHeight / aspectRatio;
+        auto xPos         = (windowWidth - drawWidth) / 2.;
+        auto yPos         = accHeight;
+        if (center) {
+            yPos = (windowHeight - drawHeight) / 2. + accHeight;
+            currentImageDy =
+                std::abs(windowHeight / 2. - (yPos + drawHeight / 2.));
+        }
+        SDL_Rect imageRect{xPos, yPos, drawWidth, drawHeight};
+        if (!center) {
+            maybeChangeCurrentImage(index, yPos, drawHeight);
+        }
+        if (!image.image) {
             sdlContext.imagesToLoad.insert(index);
-            // The current image is partially or fully within the window, so
-            // render it
-            if (image.image) {
-				xPos = (windowWidth - currentWidth) / 2;
-                SDL_Rect imageRect{xPos, yPos + currentY, currentWidth,
-                                   currentHeight};
-                SDL_RenderCopy(renderer.get(), image.image.value().get(),
-                               nullptr, &imageRect);
-            }
-        } else {
-            sdlContext.imagesToLoad.erase(index);
+            return true;
         }
+        SDL_RenderCopy(renderer.get(), image.image.value().get(), nullptr,
+                       &imageRect);
+        if (isRectInsideWindow(imageRect)) {
+            return true;
+        } else {
+            return false;
+        }
+    };
 
-        // Update the current y position
-        currentY += currentHeight;
+    const auto& fordwardDraw = [&](auto index) {
+        auto accHeight = (windowHeight - windowHeight * zoom) / 2. +
+                         sdlContext.imageViewerState.panningY;
+        accHeight += windowHeight * zoom;
+        while (index <= sdlContext.imagesVector.size()) {
+            const auto sucess = drawImage(index, accHeight, false);
+			accHeight += windowHeight * zoom;
+            index += 1;
+            if (!sucess) {
+                break;
+            }
+        }
+    };
+
+    const auto& backwardsDraw = [&](auto index) {
+        auto accHeight = (windowHeight - windowHeight * zoom) / 2. +
+                         sdlContext.imageViewerState.panningY;
+        accHeight -= windowHeight * zoom;
+        while (index >= 0) {
+            const auto sucess = drawImage(index, accHeight, false);
+            accHeight -= windowHeight * zoom;
+            index -= 1;
+            if (!sucess) {
+                break;
+            }
+        }
+    };
+
+    auto index = sdlContext.currentImage;
+    const auto sucess =
+        drawImage(index, sdlContext.imageViewerState.panningY, true);
+    fordwardDraw(index + 1);
+    backwardsDraw(index - 1);
+
+    while (index < newCurrentImage) {
+        sdlContext.imageViewerState.panningY += windowHeight * zoom;
         index += 1;
     }
+
+    while (index > newCurrentImage) {
+        sdlContext.imageViewerState.panningY -= windowHeight * zoom;
+        index -= 1;
+    }
+
+    sdlContext.currentImage = newCurrentImage;
 }
 
 void ImageViewerApp::setImagesToLoad() {

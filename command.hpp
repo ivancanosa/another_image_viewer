@@ -321,5 +321,7 @@ void zoomDownViewer(SdlContext& sdlContext, int num) {
 }
 
 void toggleContiguousView(SdlContext& sdlContext, int num){
+	sdlContext.imageViewerState.panningY = 0;
+	sdlContext.imageViewerState.panningX = 0;
 	sdlContext.contiguousView = !sdlContext.contiguousView;
 }
