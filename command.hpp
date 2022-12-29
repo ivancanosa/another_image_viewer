@@ -50,10 +50,9 @@ class CommandExecuter {
     CommandExecuter()
         : generalCommands{{"f", toggleFullscreen},   {"n", nextImage},
                           {" ", nextImage},          {"p", previousImage},
-                          {"gg", goFirstImage},      {"g", goToImagePosition},
-                          {"G", goLastImage},        {"r", reloadCurrentImage},
-                          {"\n", toggleViewerState}, {"b", toggleBottomBar},
-                          {"q", exitCommand}},
+                          {"gg", goToImagePosition}, {"G", goLastImage},
+                          {"r", reloadCurrentImage}, {"\n", toggleViewerState},
+                          {"b", toggleBottomBar},    {"q", exitCommand}},
 
           gridImagesCommands{{"+", zoomUpGrid},   {"-", zoomDownGrid},
                              {"j", moveDownGrid}, {"k", moveUpGrid},
@@ -67,29 +66,41 @@ class CommandExecuter {
               {">", rotateRight},    {"<", rotateLeft},
           } {
 
+        const auto identity = [](const auto& arg) { return arg; };
+
+        const auto wordToAllSubstring = [](const auto& arg) {
+            std::string regex_string = "";
+            for (int i = 0; i < arg.length(); i++) {
+                regex_string += arg.substr(0, i + 1) + "|";
+            }
+            // remove the last "|" from the regex string
+            regex_string = regex_string.substr(0, regex_string.length() - 1);
+            return regex_string;
+        };
+
         const auto addKeyToString = [](bool& first, const std::string& key,
-                                       std::string& pattern) {
+                                       std::string& pattern, const auto& tr) {
             if (!first) {
                 if (key != "+") {
-                    pattern += "|" + key;
+                    pattern += "|" + tr(key);
                 } else {
                     pattern += "|\\+";
                 }
             } else {
                 first = false;
                 if (key != "+") {
-                    pattern += key;
+                    pattern += tr(key);
                 } else {
                     pattern += "\\+";
                 }
             }
         };
 
-        const auto buildRegex = [&](const auto& map) {
+        const auto buildRegex = [&](const auto& map, const auto& tr) {
             std::string patternString = "^(\\d*)(";
             bool first{true};
             for (const auto& [key, _] : map) {
-                addKeyToString(first, key, patternString);
+                addKeyToString(first, key, patternString, tr);
             }
             patternString += ")?$";
             return std::regex(patternString);
@@ -104,8 +115,10 @@ class CommandExecuter {
         addMap(generalCommands, gridImagesCommands);
         addMap(generalCommands, imageViewerCommands);
 
-        regexGrid   = buildRegex(gridImagesCommands);
-        regexViewer = buildRegex(imageViewerCommands);
+        regexGrid        = buildRegex(gridImagesCommands, identity);
+        regexViewer      = buildRegex(imageViewerCommands, identity);
+        maybeRegexGrid   = buildRegex(gridImagesCommands, wordToAllSubstring);
+        maybeRegexViewer = buildRegex(imageViewerCommands, wordToAllSubstring);
     }
 
     void matchCommand(SdlContext& context, std::string& inputCommand) {
@@ -113,12 +126,17 @@ class CommandExecuter {
             return;
         }
 
+        auto match = [&](const auto& regex) {
+            std::smatch match;
+            return std::regex_match(inputCommand, match, regex);
+        };
+
         auto matchAndExecute = [&](const auto& regex, auto& commandMap) {
             std::smatch match;
             if (std::regex_match(inputCommand, match, regex)) {
                 int number{0};
                 std::string command;
-                if (match[0].length() > 1) {
+                if (match[1].length() > 0) {
                     number = std::stoi(match[1]);
                 }
                 command = match[2];
@@ -126,21 +144,29 @@ class CommandExecuter {
                     commandMap[command](context, number);
                     inputCommand = "";
                 }
-            } else {
-                inputCommand = "";
             }
         };
 
         if (context.isGridImages) {
-            matchAndExecute(regexGrid, gridImagesCommands);
+            if (match(maybeRegexGrid)) {
+                matchAndExecute(regexGrid, gridImagesCommands);
+            } else {
+                inputCommand = "";
+            }
         } else {
-            matchAndExecute(regexViewer, imageViewerCommands);
+            if (match(maybeRegexViewer)) {
+                matchAndExecute(regexViewer, imageViewerCommands);
+            } else {
+                inputCommand = "";
+            }
         }
     }
 
   private:
     std::regex regexGrid;
     std::regex regexViewer;
+    std::regex maybeRegexGrid;
+    std::regex maybeRegexViewer;
 
     std::unordered_map<std::string, void (*)(SdlContext&, int)> generalCommands;
     std::unordered_map<std::string, void (*)(SdlContext&, int)>
@@ -205,13 +231,13 @@ void exitCommand(SdlContext& sdlContext, int num) {
 //******** Grid images commands ***********
 
 void zoomUpGrid(SdlContext& sdlContext, int num) {
-	int size = std::clamp(sdlContext.style.thumbnailSize + 20, 30, 400);
-	sdlContext.style.thumbnailSize = size;
+    int size = std::clamp(sdlContext.style.thumbnailSize + 20, 30, 400);
+    sdlContext.style.thumbnailSize = size;
 }
 
 void zoomDownGrid(SdlContext& sdlContext, int num) {
-	int size = std::clamp(sdlContext.style.thumbnailSize - 20, 30, 400);
-	sdlContext.style.thumbnailSize = size;
+    int size = std::clamp(sdlContext.style.thumbnailSize - 20, 30, 400);
+    sdlContext.style.thumbnailSize = size;
 }
 
 void moveUpGrid(SdlContext& sdlContext, int num) {
@@ -288,5 +314,5 @@ void zoomUpViewer(SdlContext& sdlContext, int num) {
 void zoomDownViewer(SdlContext& sdlContext, int num) {
     sdlContext.imageViewerState.fitHeight = false;
     sdlContext.imageViewerState.fitWidth  = false;
-    sdlContext.imageViewerState.zoom *= 1/1.2;
+    sdlContext.imageViewerState.zoom *= 1 / 1.2;
 }
