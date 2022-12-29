@@ -388,7 +388,7 @@ void ImageViewerApp::drawImageViewerContiguous() {
     float zoom           = sdlContext.imageViewerState.zoom;
     SDL_Rect windowRect{0, 0, windowWidth, windowHeight};
 
-    //    sdlContext.imagesToLoad.clear();
+    sdlContext.imagesToLoad.clear();
 
     int newCurrentImage = sdlContext.currentImage;
     int currentImageDy  = 0.;
@@ -410,15 +410,16 @@ void ImageViewerApp::drawImageViewerContiguous() {
         }
     };
 
-    // Return if is was able to draw image and the acc height
+    // Return true if the drawed image was inside the window
     const auto& drawImage = [&](const auto& index, auto accHeight,
-                                auto center){
+                                auto center) {
         const auto& image = sdlContext.imagesVector[index];
         float aspectRatio = (float)image.height / image.width;
         auto drawHeight   = windowHeight * zoom;
         auto drawWidth    = drawHeight / aspectRatio;
         auto xPos         = (windowWidth - drawWidth) / 2.;
         auto yPos         = accHeight;
+        sdlContext.imagesToLoad.insert(index);
         if (center) {
             yPos = (windowHeight - drawHeight) / 2. + accHeight;
             currentImageDy =
@@ -429,7 +430,6 @@ void ImageViewerApp::drawImageViewerContiguous() {
             maybeChangeCurrentImage(index, yPos, drawHeight);
         }
         if (!image.image) {
-            sdlContext.imagesToLoad.insert(index);
             return true;
         }
         SDL_RenderCopy(renderer.get(), image.image.value().get(), nullptr,
@@ -447,7 +447,7 @@ void ImageViewerApp::drawImageViewerContiguous() {
         accHeight += windowHeight * zoom;
         while (index <= sdlContext.imagesVector.size()) {
             const auto sucess = drawImage(index, accHeight, false);
-			accHeight += windowHeight * zoom;
+            accHeight += windowHeight * zoom;
             index += 1;
             if (!sucess) {
                 break;
