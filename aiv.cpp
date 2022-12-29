@@ -33,6 +33,52 @@ SdlTexture createThumbnail(const SdlRenderer& renderer,
 
 std::string memoryToHumanReadable(long bytes, int decimalPrecision = 2);
 
+bool loadGifAnimation(SdlRenderer& renderer, ImageHeader& imageHeader) {
+    // Check if the file is a GIF
+    SDL_RWops* io = SDL_RWFromFile(imageHeader.fileAdress.c_str(), "rb");
+    if (io == nullptr) {
+        return false;
+    }
+    if (IMG_isGIF(io) == 0) {
+        // File is not a GIF, return
+        return false;
+    }
+
+    // Load the GIF animation
+    IMG_Animation* gifAnimation =
+        IMG_LoadAnimation(imageHeader.fileAdress.c_str());
+    if (gifAnimation == NULL) {
+        return false;
+    }
+
+    // Create an SdlAnimation object to store the frames and FPS of the GIF
+    // animation
+    SdlAnimation animation;
+    //   animation.fps = gifAnimation->fps;
+
+    animation.fps = std::round(
+        std::clamp((1. / (*gifAnimation->delays * 0.001)), 1., 100.));
+    // Convert each frame of the GIF animation to an SdlTexture and add it to
+    // the SdlAnimation object
+    for (int i = 0; i < gifAnimation->count; i++) {
+        SDL_Surface* surface = gifAnimation->frames[i];
+        SdlTexture texture(
+            SDL_CreateTextureFromSurface(renderer.get(), surface),
+            SDL_DestroyTexture);
+        animation.frames.push_back(std::move(texture));
+    }
+
+    // Update the width, height, and animation fields of the ImageHeader object
+    imageHeader.width     = gifAnimation->w;
+    imageHeader.height    = gifAnimation->h;
+    imageHeader.animation = std::move(animation);
+    imageHeader.memory = std::filesystem::file_size(imageHeader.fileAdress.c_str());
+
+    // Free the IMG_Animation object
+    IMG_FreeAnimation(gifAnimation);
+    return true;
+}
+
 class ImageLoaderPolicy {
   public:
     ImageLoaderPolicy(int numImages) : loadedThumbnails(numImages, false) {
@@ -92,7 +138,7 @@ class ImageLoaderPolicy {
                 return;
             }
             int width, height;
-			long memory;
+            long memory;
             auto thumbnail = createThumbnailWithSize(
                 sdlContext.renderer, sdlContext.imagesVector[index].fileAdress,
                 100, 100, width, height, memory);
@@ -105,7 +151,7 @@ class ImageLoaderPolicy {
             sdlContext.imagesVector[index].thumbnail = std::move(thumbnail);
             sdlContext.imagesVector[index].width     = width;
             sdlContext.imagesVector[index].height    = height;
-            sdlContext.imagesVector[index].memory     = memory;
+            sdlContext.imagesVector[index].memory    = memory;
         };
 
         const auto& [rFirstIt, lastIt] = getFrontierIterators();
@@ -118,22 +164,27 @@ class ImageLoaderPolicy {
         if (lastLoadedImage != index) {
             if (lastLoadedImage != -1) {
                 sdlContext.imagesVector[lastLoadedImage].image = std::nullopt;
+                sdlContext.imagesVector[lastLoadedImage].animation =
+                    std::nullopt;
             }
-            auto texture = createTexture(
-                sdlContext.renderer, sdlContext.imagesVector[index].fileAdress);
+            if (!loadGifAnimation(sdlContext.renderer,
+                                  sdlContext.imagesVector[index])) {
+                auto texture =
+                    createTexture(sdlContext.renderer,
+                                  sdlContext.imagesVector[index].fileAdress);
+                if (texture) {
+                    SDL_Point size;
+                    SDL_QueryTexture(texture.value().get(), NULL, NULL, &size.x,
+                                     &size.y);
+                    std::filesystem::path file_path(
+                        sdlContext.imagesVector[index].fileAdress);
+                    std::size_t memory = std::filesystem::file_size(file_path);
 
-            if (texture) {
-                SDL_Point size;
-                SDL_QueryTexture(texture.value().get(), NULL, NULL, &size.x,
-                                 &size.y);
-                std::filesystem::path file_path(
-                    sdlContext.imagesVector[index].fileAdress);
-                std::size_t memory = std::filesystem::file_size(file_path);
-
-                sdlContext.imagesVector[index].image  = std::move(texture);
-                sdlContext.imagesVector[index].memory = memory;
-                sdlContext.imagesVector[index].width  = size.x;
-                sdlContext.imagesVector[index].height = size.y;
+                    sdlContext.imagesVector[index].image  = std::move(texture);
+                    sdlContext.imagesVector[index].memory = memory;
+                    sdlContext.imagesVector[index].width  = size.x;
+                    sdlContext.imagesVector[index].height = size.y;
+                }
             }
             lastLoadedImage = index;
         }
@@ -235,9 +286,18 @@ class ImageViewerApp {
             leftInfo += ", " + std::to_string(imageHeader.width) + "x" +
                         std::to_string(imageHeader.height);
             leftInfo += ", address: " + imageHeader.fileAdress;
-            std::string rightInfo =
-                std::to_string(sdlContext.currentImage) + "/" +
-                std::to_string(sdlContext.imagesVector.size() - 1);
+            std::string rightInfo;
+
+            if (imageHeader.animation) {
+                rightInfo +=
+                    std::to_string(imageHeader.animation.value().actualFrame) +
+                    "/" +
+                    std::to_string(imageHeader.animation.value().frames.size() -
+                                   1) +
+                    ", ";
+            }
+            rightInfo += std::to_string(sdlContext.currentImage) + "/" +
+                         std::to_string(sdlContext.imagesVector.size() - 1);
             drawBottomLeftText(leftInfo);
             drawBottomRightText(rightInfo);
         }
@@ -308,8 +368,8 @@ class ImageViewerApp {
                         continue;
                     const auto& image = sdlContext.imagesVector[index];
 
-                    // Calculate the new width and height based on the aspect
-                    // ratio of the original image
+                    // Calculate the new width and height based on the
+                    // aspect ratio of the original image
                     int originalWidth  = sdlContext.imagesVector[index].width;
                     int originalHeight = sdlContext.imagesVector[index].height;
                     int newWidth, newHeight;
@@ -327,8 +387,8 @@ class ImageViewerApp {
                         newHeight = sdlContext.style.thumbnailSize;
                     }
 
-                    // Create the destination rect for the image with the new
-                    // width and height
+                    // Create the destination rect for the image with the
+                    // new width and height
                     SDL_Rect destRect{sdlContext.style.padding +
                                           j * (sdlContext.style.thumbnailSize +
                                                sdlContext.style.padding),
@@ -397,12 +457,8 @@ class ImageViewerApp {
 
     void drawImageViewer() {
         const auto& renderer = sdlContext.renderer;
-        const auto& image    = sdlContext.imagesVector[sdlContext.currentImage];
+        auto& image          = sdlContext.imagesVector[sdlContext.currentImage];
         const auto& imageViewerState = sdlContext.imageViewerState;
-
-        if (!image.image) {
-            return;
-        }
 
         // Get the window size
         int windowWidth, windowHeight;
@@ -445,17 +501,21 @@ class ImageViewerApp {
         const ImageViewerState& state = sdlContext.imageViewerState;
         int xPos, yPos;
         if (drawWidth > windowWidth) {
-            // If the image is wider than the window, allow horizontal panning
+            // If the image is wider than the window, allow horizontal
+            // panning
             xPos = (windowWidth - drawWidth) / 2 + state.panningX;
         } else {
-            // If the image is not wider than the window, center it horizontally
+            // If the image is not wider than the window, center it
+            // horizontally
             xPos = (windowWidth - drawWidth) / 2;
         }
         if (drawHeight > windowHeight) {
-            // If the image is taller than the window, allow vertical panning
+            // If the image is taller than the window, allow vertical
+            // panning
             yPos = (windowHeight - drawHeight) / 2 + state.panningY;
         } else {
-            // If the image is not taller than the window, center it vertically
+            // If the image is not taller than the window, center it
+            // vertically
             yPos = (windowHeight - drawHeight) / 2;
         }
 
@@ -480,13 +540,24 @@ class ImageViewerApp {
         int angle = imageViewerState.rotation * 90;
 
         // Draw the image to the renderer
-        SDL_RenderCopyEx(renderer.get(), image.image.value().get(), nullptr,
-                         &imageRect, angle, nullptr, flip);
+        if (image.image) {
+            SDL_RenderCopyEx(renderer.get(), image.image.value().get(), nullptr,
+                             &imageRect, angle, nullptr, flip);
+        }
+        if (image.animation) {
+            SDL_RenderCopyEx(renderer.get(),
+                             image.animation.value()
+                                 .frames[image.animation.value().actualFrame]
+                                 .get(),
+                             nullptr, &imageRect, angle, nullptr, flip);
+            image.animation.value().actualFrame =
+                (image.animation.value().actualFrame + 1) %
+                image.animation.value().frames.size();
+            sdlContext.fps = image.animation.value().fps;
+        }
     }
 
     void mainLoop() {
-        const int TARGET_FPS         = 30;
-        const int TARGET_FRAME_DELAY = 1000 / TARGET_FPS;
         while (!sdlContext.exit) {
             Uint32 frameStartTime = SDL_GetTicks();
 
@@ -509,10 +580,12 @@ class ImageViewerApp {
             // Calculate the elapsed time for the frame
             int elapsedTime = SDL_GetTicks() - frameStartTime;
 
+            int frameDelay = 1000 / sdlContext.fps;
             // Delay the program to maintain the target frame rate
-            if (elapsedTime < TARGET_FRAME_DELAY) {
-                SDL_Delay(TARGET_FRAME_DELAY - elapsedTime);
+            if (elapsedTime < frameDelay) {
+                SDL_Delay(frameDelay - elapsedTime);
             }
+            sdlContext.fps = 24;
         }
         CacheFilenames cacheFilenames;
         cacheFilenames.saveActualImagePosition(sdlContext);
@@ -616,8 +689,8 @@ SdlTexture createThumbnail(const SdlRenderer& renderer,
         SDL_CreateTexture(renderer.get(), SDL_PIXELFORMAT_RGBA8888,
                           SDL_TEXTUREACCESS_TARGET, newW, newH);
 
-    // Copy the original texture to the resized texture, maintaining the aspect
-    // ratio
+    // Copy the original texture to the resized texture, maintaining the
+    // aspect ratio
     SDL_SetRenderTarget(renderer.get(), resizedTexture);
     SDL_RenderCopy(renderer.get(), originalTexture, NULL, NULL);
     SDL_SetRenderTarget(renderer.get(), NULL);

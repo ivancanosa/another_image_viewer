@@ -6,7 +6,9 @@ An image viewer implementation using C++17 and SDL2. It is heavily inspired on s
 <img src="imageView.png" width="50%" height="50%">
 
 - Keyboard input only. Vim-like commands.
+- Rendering of gif animations.
 - When the program is closed, it will resume to the same image position when opened again with similar arguments. The way it works is that when you close the image viewer, is saves the path of the current image to a cache file. When you open it again and one of the input filenames matches a string in the cache, it moves the cursor to that image.
+
 
 ## Usage
 The command is "aiv". You can insert as command line arguments the filenames or directories for it to search images. You can also input the filenames or directories by pipeline.

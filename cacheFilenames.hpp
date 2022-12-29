@@ -28,7 +28,7 @@ class CacheFilenames {
 
         // Create the "iv" directory if it doesn't already exist
         std::string aiv_dir = cache_dir + "/aiv";
-        int mkdir_result   = mkdir(aiv_dir.c_str(), 0700);
+        int mkdir_result    = mkdir(aiv_dir.c_str(), 0700);
         if (mkdir_result != 0 && errno != EEXIST) {
             std::cerr << "Error creating directory '" << aiv_dir
                       << "': " << strerror(errno) << std::endl;
@@ -78,7 +78,8 @@ void deleteLineFromFile(std::string input_filename, int line_number) {
 }
 
 void CacheFilenames::saveActualImagePosition(const SdlContext& sdlContext) {
-    if (sdlContext.currentImage == 0 || filename == "") {
+    if (sdlContext.currentImage == 0 || filename == "" ||
+        sdlContext.currentImage == sdlContext.imagesVector.size() - 1) {
         return;
     }
     std::string imageFilename =

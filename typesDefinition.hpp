@@ -1,5 +1,6 @@
 #pragma once
 #include "SDL.h"
+#include "SDL_image.h"
 #include "SDL_ttf.h"
 #include <array>
 #include <memory>
@@ -8,12 +9,18 @@
 #include <unordered_set>
 #include <vector>
 
-using SdlWindow   = std::unique_ptr<SDL_Window, void (*)(SDL_Window*)>;
-using SdlRenderer = std::unique_ptr<SDL_Renderer, void (*)(SDL_Renderer*)>;
-using SdlTexture  = std::unique_ptr<SDL_Texture, void (*)(SDL_Texture*)>;
-using SdlFont     = std::unique_ptr<TTF_Font, void (*)(TTF_Font*)>;
+using SdlWindow    = std::unique_ptr<SDL_Window, void (*)(SDL_Window*)>;
+using SdlRenderer  = std::unique_ptr<SDL_Renderer, void (*)(SDL_Renderer*)>;
+using SdlTexture   = std::unique_ptr<SDL_Texture, void (*)(SDL_Texture*)>;
+using SdlFont      = std::unique_ptr<TTF_Font, void (*)(TTF_Font*)>;
 
 using Color = std::array<Uint8, 3>;
+
+struct SdlAnimation{
+	std::vector<SdlTexture> frames;
+	int actualFrame{0};
+	int fps{24};
+};
 
 struct WindowSettings {
     std::string Title{};
@@ -56,6 +63,8 @@ struct ImageViewerState {
 struct ImageHeader {
     std::optional<SdlTexture> image{std::nullopt};
     std::optional<SdlTexture> thumbnail{std::nullopt};
+    std::optional<SdlAnimation> animation{std::nullopt};
+
     long memory{10};
     int width{10};
     int height{10};
@@ -65,7 +74,7 @@ struct ImageHeader {
 struct SdlContext {
     SdlWindow window;
     SdlRenderer renderer;
-	std::optional<SdlFont> font{std::nullopt};
+    std::optional<SdlFont> font{std::nullopt};
     WindowSettings windowSettings{};
     Style style{};
 
@@ -75,6 +84,7 @@ struct SdlContext {
     std::vector<ImageHeader> imagesVector;
     bool isGridImages{true};
     bool showBar{true};
+	int fps{24};
     int currentImage{0};
     bool exit{false};
 };
