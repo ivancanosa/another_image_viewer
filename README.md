@@ -31,31 +31,32 @@ The command is "aiv". You can insert as command line arguments the filenames or 
 clang 14.00+, meson, Make, Linux system.
 
 ## Keyboard input:
+All commands with the symbol \<N\> accepts an optional number to modify the command. By default the number is 1.
 ### General:
 - f: toggle fullscreen
-- n: next image
-- "SPACE": next image
-- p: previous image
-- g: go to first image
+- \<N\>n: next image
+- \<SPACE\>: next image
+- \<N\>p: previous image
+- \<N\>gg: go to the image in the position N.
 - G: go to last image
-- "ENTER": Toggle between grid view and image view
+- \<ENTER\>: Toggle between grid view and image view
 - b: toggle bottom bar information
 - q: exit the image viewer
 	
 ### Grid image mode
 - +: Zoom up grid
 - -: Zoom down grid
-- j: move down
-- k: move up
-- h: move left
-- l: move right
+- \<N\>j: move down
+- \<N\>k: move up
+- \<N\>h: move left
+- \<N\>l: move right
 ### Image viewer mode
 - +: Zoom up image
 - -: Zoom down image
-- j: move down
-- k: move up
-- h: move left
-- l: move right
+- \<N\>j: move down
+- \<N\>k: move up
+- \<N\>h: move left
+- \<N\>l: move right
 - e: fit image to the width of the window
 - E: fit image to the height of the window
 - <: rotate left
