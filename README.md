@@ -3,17 +3,17 @@ An image viewer implementation using C++17 and SDL2. It is heavily inspired on s
 
 ## Features
 <div>
-<img src="image0.png" width="80%" height="80%" alt="Grid view mode">
+<img src="image0.png" alt="Grid view mode">
 <p> Grid view mode</p>
 </div>
 
 <div>
-<img src="image1.png" width="80%" height="80%" alt="Image view mode">
+<img src="image1.png" alt="Image view mode">
 <p> Image view mode</p>
 </div>
 
 <div>
-<img src="image2.gif" width="80%" height="80%" alt="Image continuum view mode" animated>
+<img src="image2.gif" alt="Image continuum view mode" animated>
 <p> Image continuum view mode </p>
 </div>
 
