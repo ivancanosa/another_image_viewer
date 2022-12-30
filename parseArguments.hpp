@@ -70,12 +70,12 @@ SdlContext parseCommandLineArguments(int argc, char** argv) {
 
 
     try {
-        parser.parse_known_args(argc, argv); // Example: ./main --color orange
-        //sdlContext.style.thumbnailSize = parser.get<int>("--thumbnailSize");
+        parser.parse_known_args(argc, argv);
     } catch (const std::runtime_error& err) {
         std::cerr << err.what() << std::endl;
         std::cerr << parser;
     }
+
 	if(parser.is_used("--thumbnailSize")){
 		auto s = parser.get("--thumbnailSize");
 		sdlContext.style.thumbnailSize = std::stoi(s);
@@ -118,7 +118,7 @@ std::vector<std::string> getFilenamesFromArguments(int argc, char** argv) {
     }
 
 #ifdef _WIN32
-    // TODO: Windows code to get input from pipeline in a non blocknig way
+    // TODO: Windows code to get input from pipeline in a non blocking way
 #else
     int flags2 = fcntl(0, F_GETFL, 0);
     fcntl(0, F_SETFL, flags2 | O_NONBLOCK);
