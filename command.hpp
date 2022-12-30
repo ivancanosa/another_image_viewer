@@ -92,12 +92,9 @@ class CommandExecuter {
             for (int i = 0; i < arg.length(); i++) {
                 // Check if the current character is an escape character
                 if (arg[i] == '\\' && i + 1 < arg.length()) {
-                    // If it is, add the next two characters as a single entity
-                    regex_string += arg.substr(i, 2) + "|";
                     i++;
-                } else {
-                    regex_string += arg.substr(i, 1) + "|";
                 }
+				regex_string += arg.substr(0, i+1) + "|";
             }
             // remove the last "|" from the regex string
             regex_string = regex_string.substr(0, regex_string.length() - 1);
