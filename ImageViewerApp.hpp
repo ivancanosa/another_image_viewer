@@ -540,6 +540,11 @@ void ImageViewerApp::mainLoop() {
         }
         sdlContext.fps = 24;
     }
-    CacheFilenames cacheFilenames;
-    cacheFilenames.saveActualImagePosition(sdlContext);
+	if(sdlContext.windowSettings.useCacheFile){
+		CacheFilenames cacheFilenames;
+		cacheFilenames.saveActualImagePosition(sdlContext);
+	}
+	if(sdlContext.windowSettings.outputFilename){
+		std::cout << sdlContext.imagesVector[sdlContext.currentImage].fileAdress << "\n";
+	}
 }

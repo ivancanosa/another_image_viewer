@@ -90,7 +90,9 @@ SdlWindow createSdlWindow(const WindowSettings& windowSettings) {
     flags |= windowSettings.fullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0;
     flags |= SDL_WINDOW_RESIZABLE;
 
-    SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1");
+	if(windowSettings.useBilinearInterpolation){
+		SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1");
+	}
     //    SDL_SetHint(SDL_HINT_RENDER_VSYNC, "1");
 
     auto sdlWin =

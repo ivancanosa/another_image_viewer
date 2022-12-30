@@ -55,5 +55,4 @@ clang 14.00+, meson, Make, Linux system.
 - make test: builds and executes the tests
 
 ## TODO
-- set/unset bilinear interpolation as command line argument
 - Change "cacheFilenames.hpp" so it also works on windows

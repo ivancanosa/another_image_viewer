@@ -28,6 +28,10 @@ struct WindowSettings {
     int height{100};
     bool borderless{true};
     bool fullscreen{false};
+
+	bool useCacheFile{true};
+	bool outputFilename{false};
+	bool useBilinearInterpolation{true};
 };
 
 struct Style {
