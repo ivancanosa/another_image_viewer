@@ -2,8 +2,20 @@
 An image viewer implementation using C++17 and SDL2. It is heavily inspired on sxiv.
 
 ## Features
-<img src="gridView.png" width="50%" height="50%">
-<img src="imageView.png" width="50%" height="50%">
+<div>
+<img src="image0.png" width="50%" height="50%">
+<p> Grid view mode</p>
+</div>
+
+<div>
+<img src="image1.png" width="50%" height="50%">
+<p> Image view mode</p>
+</div>
+
+<div>
+<img src="image2.png" width="50%" height="50%">
+<p> Image continuum view mode </p>
+</div>
 
 - Keyboard input only. Vim-like commands.
 - Rendering of gif animations.
