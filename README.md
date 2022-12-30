@@ -13,7 +13,7 @@ An image viewer implementation using C++17 and SDL2. It is heavily inspired on s
 </div>
 
 <div>
-<img src="image2.png" width="50%" height="50%" alt="Image continuum view mode">
+<img src="image2.gif" width="50%" height="50%" alt="Image continuum view mode" animated>
 <p> Image continuum view mode </p>
 </div>
 
