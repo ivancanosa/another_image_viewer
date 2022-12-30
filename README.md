@@ -9,6 +9,7 @@ An image viewer implementation using C++17 and SDL2. It is heavily inspired on s
 - Rendering of gif animations.
 - Continuum view mode. You are able to scroll from top to bottom to see the images in a continuum way.
 - When the program is closed, it will resume to the same image position when opened again with similar arguments. The way it works is that when you close the image viewer, is saves the path of the current image to a cache file. When you open it again and one of the input filenames matches a string in the cache, it moves the cursor to that image.
+- Option to write to standard output the current image filename on exit, so it is posible to use this program in a way similar to dmenu, but for images.
 
 
 ## Usage
