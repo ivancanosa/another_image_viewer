@@ -60,42 +60,57 @@ class CommandExecuter {
                              {"j", moveDownGrid}, {"k", moveUpGrid},
                              {"h", moveLeftGrid}, {"l", moveRightGrid}},
 
-          imageViewerCommands{
-              {"+", zoomUpViewer},   {"-", zoomDownViewer},
-              {"j", moveDownViewer}, {"k", moveUpViewer},
-              {"h", moveLeftViewer}, {"l", moveRightViewer},
-              {"e", fitWidth},       {"E", fitHeight},
-              {">", rotateRight},    {"<", rotateLeft},
-			  {"c", toggleContiguousView}
-          } {
+          imageViewerCommands{{"+", zoomUpViewer},
+                              {"-", zoomDownViewer},
+                              {"j", moveDownViewer},
+                              {"k", moveUpViewer},
+                              {"h", moveLeftViewer},
+                              {"l", moveRightViewer},
+                              {"e", fitWidth},
+                              {"E", fitHeight},
+                              {">", rotateRight},
+                              {"<", rotateLeft},
+                              {"c", toggleContiguousView}} {
 
         const auto identity = [](const auto& arg) { return arg; };
+
+        const auto escapeSpecialCharacters = [](const auto& arg) {
+            std::string escaped;
+            for (char c : arg) {
+                if (c == '.' || c == '[' || c == ']' || c == '(' || c == ')' ||
+                    c == '{' || c == '}' || c == '\\' || c == '^' || c == '$' ||
+                    c == '|' || c == '?' || c == '*' || c == '+') {
+                    escaped += '\\';
+                }
+                escaped += c;
+            }
+            return escaped;
+        };
 
         const auto wordToAllSubstring = [](const auto& arg) {
             std::string regex_string = "";
             for (int i = 0; i < arg.length(); i++) {
-                regex_string += arg.substr(0, i + 1) + "|";
+                // Check if the current character is an escape character
+                if (arg[i] == '\\' && i + 1 < arg.length()) {
+                    // If it is, add the next two characters as a single entity
+                    regex_string += arg.substr(i, 2) + "|";
+                    i++;
+                } else {
+                    regex_string += arg.substr(i, 1) + "|";
+                }
             }
             // remove the last "|" from the regex string
             regex_string = regex_string.substr(0, regex_string.length() - 1);
             return regex_string;
         };
 
-        const auto addKeyToString = [](bool& first, const std::string& key,
+        const auto addKeyToString = [&](bool& first, const std::string& key,
                                        std::string& pattern, const auto& tr) {
             if (!first) {
-                if (key != "+") {
-                    pattern += "|" + tr(key);
-                } else {
-                    pattern += "|\\+";
-                }
+				pattern += "|" + tr(escapeSpecialCharacters(key));
             } else {
+				pattern += tr(escapeSpecialCharacters(key));
                 first = false;
-                if (key != "+") {
-                    pattern += tr(key);
-                } else {
-                    pattern += "\\+";
-                }
             }
         };
 
@@ -320,8 +335,8 @@ void zoomDownViewer(SdlContext& sdlContext, int num) {
     sdlContext.imageViewerState.zoom *= 1 / 1.2;
 }
 
-void toggleContiguousView(SdlContext& sdlContext, int num){
-	sdlContext.imageViewerState.panningY = 0;
-	sdlContext.imageViewerState.panningX = 0;
-	sdlContext.contiguousView = !sdlContext.contiguousView;
+void toggleContiguousView(SdlContext& sdlContext, int num) {
+    sdlContext.imageViewerState.panningY = 0;
+    sdlContext.imageViewerState.panningX = 0;
+    sdlContext.contiguousView            = !sdlContext.contiguousView;
 }
