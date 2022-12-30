@@ -55,4 +55,6 @@ clang 14.00+, meson, Make, Linux system.
 - make test: builds and executes the tests
 
 ## TODO
-- Change "cacheFilenames.hpp" so it also works on windows
+- Change "cacheFilenames.hpp" so it also works on windows.
+- Be able to insert system commands inside the image viewer. It would allow to perform arbitrary operations on selected images.
+- Key bindings so the user is able to execute arbitrary commands.

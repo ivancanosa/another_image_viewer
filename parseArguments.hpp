@@ -34,9 +34,24 @@ SdlContext parseCommandLineArguments(int argc, char** argv) {
         .default_value(false)
         .implicit_value(true);
 
+    parser.add_argument("-s")
+        .help("Launch in image view mode")
+        .default_value(false)
+        .implicit_value(true);
+
+    parser.add_argument("-b")
+        .help("Hide the bottom bar on launch")
+        .default_value(false)
+        .implicit_value(true);
+
+    parser.add_argument("-f")
+        .help("Launch in fullscreen")
+        .default_value(false)
+        .implicit_value(true);
+
     parser.add_argument("-o")
         .help(
-            "Print selected image filename to standart output on program exit")
+            "Print selected image filename to standard output on program exit")
         .default_value(false)
         .implicit_value(true);
 
@@ -45,10 +60,43 @@ SdlContext parseCommandLineArguments(int argc, char** argv) {
         .default_value(false)
         .implicit_value(true);
 
-    auto args = parser.parse_known_args(argc, argv);
+    parser.add_argument("--thumbnailSize")
+        .help("The size of the thumbnails")
+        .default_value(100);
+
+    parser.add_argument("--fontSize")
+        .help("Change the font size of the bottom bar")
+        .default_value(14);
+
+
+    try {
+        parser.parse_known_args(argc, argv); // Example: ./main --color orange
+        //sdlContext.style.thumbnailSize = parser.get<int>("--thumbnailSize");
+    } catch (const std::runtime_error& err) {
+        std::cerr << err.what() << std::endl;
+        std::cerr << parser;
+    }
+	if(parser.is_used("--thumbnailSize")){
+		auto s = parser.get("--thumbnailSize");
+		sdlContext.style.thumbnailSize = std::stoi(s);
+	}
+	if(parser.is_used("--fontSize")){
+		auto s = parser.get("--fontSize");
+		sdlContext.style.fontSize = std::stoi(s);
+	}
+
 
     if (parser["-p"] == true) {
         sdlContext.windowSettings.useBilinearInterpolation = false;
+    }
+    if (parser["-s"] == true) {
+        sdlContext.isGridImages = false;
+    }
+    if (parser["-b"] == true) {
+        sdlContext.showBar = false;
+    }
+    if (parser["-f"] == true) {
+        sdlContext.windowSettings.fullscreen = true;
     }
     if (parser["-o"] == true) {
         sdlContext.windowSettings.outputFilename = true;
@@ -85,24 +133,23 @@ std::vector<std::string> getFilenamesFromArguments(int argc, char** argv) {
 
 SdlContext createSdlContext(int argc, char** argv) {
     SdlContext sdlContext = parseCommandLineArguments(argc, argv);
-    Style style{};
     if (TTF_Init() == -1) {
         assert(false && "An error occurred while initializing SDL_ttf");
     }
     std::vector<std::string> fontNames = {"DejaVu Sans", "Arial",
                                           "Liberation Sans", "FreeMono"};
-    auto font                          = createFont(fontNames, style.fontSize);
+    auto font                          = createFont(fontNames, sdlContext.style.fontSize);
 
     if (!font) {
         std::cerr << "Font not found" << std::endl;
     }
+	sdlContext.font = std::move(font);
 
     auto window   = createSdlWindow(sdlContext.windowSettings);
     auto renderer = createSdlRenderer(window);
     auto files    = getFilenamesFromArguments(argc, argv);
     files         = expandInputFiles(files);
 
-    sdlContext.style = style;
 
     if (sdlContext.windowSettings.useCacheFile) {
         CacheFilenames cacheFilenames;

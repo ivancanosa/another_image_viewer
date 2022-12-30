@@ -77,9 +77,10 @@ void ImageLoaderPolicy::loadInGrid(SdlContext& sdlContext) {
         }
         int width, height;
         long memory;
+		auto thumbnailSize = sdlContext.style.thumbnailSize;
         auto thumbnail = createThumbnailWithSize(
-            sdlContext.renderer, sdlContext.imagesVector[index].fileAdress, 100,
-            100, width, height, memory);
+            sdlContext.renderer, sdlContext.imagesVector[index].fileAdress, thumbnailSize,
+            thumbnailSize, width, height, memory);
         lastLoadedThumbnail += 1;
         loadedThumbnails[index] = true;
         if (!thumbnail) {
