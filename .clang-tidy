@@ -1,0 +1,7 @@
+Checks: '
+    modernize-*,
+	bugprone-*,
+	'
+
+WarningsAsErrors: ''
+...

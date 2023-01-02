@@ -108,7 +108,7 @@ void ImageLoaderPolicy::loadInViewer(SdlContext& sdlContext) {
                 sdlContext.renderer, sdlContext.imagesVector[index].fileAdress);
             if (texture) {
                 SDL_Point size;
-                SDL_QueryTexture(texture.value().get(), NULL, NULL, &size.x,
+                SDL_QueryTexture(texture.value().get(), nullptr, nullptr, &size.x,
                                  &size.y);
                 std::filesystem::path file_path(
                     sdlContext.imagesVector[index].fileAdress);

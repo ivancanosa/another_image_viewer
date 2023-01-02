@@ -94,7 +94,7 @@ class CommandExecuter {
                 if (arg[i] == '\\' && i + 1 < arg.length()) {
                     i++;
                 }
-				regex_string += arg.substr(0, i+1) + "|";
+                regex_string += arg.substr(0, i + 1) + "|";
             }
             // remove the last "|" from the regex string
             regex_string = regex_string.substr(0, regex_string.length() - 1);
@@ -102,11 +102,11 @@ class CommandExecuter {
         };
 
         const auto addKeyToString = [&](bool& first, const std::string& key,
-                                       std::string& pattern, const auto& tr) {
+                                        std::string& pattern, const auto& tr) {
             if (!first) {
-				pattern += "|" + tr(escapeSpecialCharacters(key));
+                pattern += "|" + tr(escapeSpecialCharacters(key));
             } else {
-				pattern += tr(escapeSpecialCharacters(key));
+                pattern += tr(escapeSpecialCharacters(key));
                 first = false;
             }
         };
@@ -200,14 +200,14 @@ void toggleFullscreen(SdlContext& sdlContext, int num) {
 }
 
 void nextImage(SdlContext& sdlContext, int num) {
-    int size = sdlContext.imagesVector.size();
+    int size = (int)sdlContext.imagesVector.size();
     num      = num == 0 ? 1 : num;
     sdlContext.currentImage =
         std::clamp(sdlContext.currentImage + num, 0, size - 1);
 }
 
 void previousImage(SdlContext& sdlContext, int num) {
-    int size = sdlContext.imagesVector.size();
+    int size = (int)sdlContext.imagesVector.size();
     num      = num == 0 ? 1 : num;
     sdlContext.currentImage =
         std::clamp(sdlContext.currentImage - num, 0, size - 1);
@@ -218,12 +218,12 @@ void goFirstImage(SdlContext& sdlContext, int num) {
 }
 
 void goLastImage(SdlContext& sdlContext, int num) {
-    int size                = sdlContext.imagesVector.size();
+    int size                = (int)sdlContext.imagesVector.size();
     sdlContext.currentImage = size - 1;
 }
 
 void goToImagePosition(SdlContext& sdlContext, int num) {
-    int size                = sdlContext.imagesVector.size();
+    int size                = (int)sdlContext.imagesVector.size();
     sdlContext.currentImage = std::clamp(num, 0, size - 1);
 }
 

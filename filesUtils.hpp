@@ -15,8 +15,8 @@
 //   - A regular expression: All files that match will be copied to the output
 //   vector.
 // Lastly, the code eliminates all duplicated files from the output vector
-std::vector<std::string>
-expandInputFiles(const std::vector<std::string>& files) {
+auto
+expandInputFiles(const std::vector<std::string>& files) -> std::vector<std::string> {
     const std::unordered_set<std::string> image_extensions = {
         ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tiff"};
 

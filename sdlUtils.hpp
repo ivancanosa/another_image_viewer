@@ -5,52 +5,52 @@
 
 #include "typesDefinition.hpp"
 
-SdlWindow createSdlWindow(const WindowSettings& windowSettings);
-SdlRenderer createSdlRenderer(const SdlWindow& sdlWindow);
-SdlTexture createTexture(SDL_Texture* texture);
+auto createSdlWindow(const WindowSettings& windowSettings) -> SdlWindow;
+auto createSdlRenderer(const SdlWindow& sdlWindow) -> SdlRenderer;
+auto createTexture(SDL_Texture* texture) -> SdlTexture;
 
-std::optional<SdlTexture> createTexture(const SdlRenderer& renderer,
-                                        const std::string& filename);
+auto createTexture(const SdlRenderer& renderer, const std::string& filename)
+    -> std::optional<SdlTexture>;
 
-std::optional<SdlTexture> createThumbnailWithSize(
-    const SdlRenderer& renderer, const std::string& filename, int maxWidth,
-    int maxHeight, int& returnWidht, int& returnHeight, long& returnMemory);
+auto createThumbnailWithSize(const SdlRenderer& renderer,
+                             const std::string& filename, int maxWidth,
+                             int maxHeight, int& returnWidht, int& returnHeight,
+                             long& returnMemory) -> std::optional<SdlTexture>;
 
-SdlTexture createThumbnail(const SdlRenderer& renderer,
-                           const SdlTexture& texture, int maxWidth,
-                           int maxHeight);
+auto createThumbnail(const SdlRenderer& renderer, const SdlTexture& texture,
+                     int maxWidth, int maxHeight) -> SdlTexture;
 
-std::string memoryToHumanReadable(long bytes, int decimalPrecision = 2);
+auto memoryToHumanReadable(long bytes, int decimalPrecision = 2) -> std::string;
 
-bool loadGifAnimation(SdlRenderer& renderer, ImageHeader& imageHeader);
+auto loadGifAnimation(SdlRenderer& renderer, ImageHeader& imageHeader) -> bool;
 
 //**************************************************************
 //********************* Implementation *************************
 //**************************************************************
 
-std::optional<SdlTexture> createThumbnailWithSize(
-    const SdlRenderer& renderer, const std::string& filename, int maxWidth,
-    int maxHeight, int& returnWidht, int& returnHeight, long& returnMemory) {
+auto createThumbnailWithSize(const SdlRenderer& renderer,
+                             const std::string& filename, int maxWidth,
+                             int maxHeight, int& returnWidht, int& returnHeight,
+                             long& returnMemory) -> std::optional<SdlTexture> {
     auto texture = createTexture(renderer, filename);
     if (!texture) {
         return std::nullopt;
     }
     SDL_Point size;
-    SDL_QueryTexture(texture.value().get(), NULL, NULL, &size.x, &size.y);
+    SDL_QueryTexture(texture.value().get(), nullptr, nullptr, &size.x, &size.y);
     returnMemory = std::filesystem::file_size(filename);
     returnWidht  = size.x;
     returnHeight = size.y;
     return createThumbnail(renderer, texture.value(), maxWidth, maxHeight);
 }
 
-SdlTexture createThumbnail(const SdlRenderer& renderer,
-                           const SdlTexture& texture, int maxWidth,
-                           int maxHeight) {
+auto createThumbnail(const SdlRenderer& renderer, const SdlTexture& texture,
+                     int maxWidth, int maxHeight) -> SdlTexture {
     SDL_Texture* originalTexture = texture.get();
 
     // Get the original dimensions of the texture
     int w, h;
-    SDL_QueryTexture(originalTexture, NULL, NULL, &w, &h);
+    SDL_QueryTexture(originalTexture, nullptr, nullptr, &w, &h);
 
     // Calculate the new dimensions for the resized texture
     int newW, newH;
@@ -71,13 +71,13 @@ SdlTexture createThumbnail(const SdlRenderer& renderer,
     // Copy the original texture to the resized texture, maintaining the
     // aspect ratio
     SDL_SetRenderTarget(renderer.get(), resizedTexture);
-    SDL_RenderCopy(renderer.get(), originalTexture, NULL, NULL);
-    SDL_SetRenderTarget(renderer.get(), NULL);
+    SDL_RenderCopy(renderer.get(), originalTexture, nullptr, nullptr);
+    SDL_SetRenderTarget(renderer.get(), nullptr);
 
     return createTexture(resizedTexture);
 }
 
-SdlWindow createSdlWindow(const WindowSettings& windowSettings) {
+auto createSdlWindow(const WindowSettings& windowSettings) -> SdlWindow {
     if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
         std::string error{"Error initializing SDL: "};
         error += SDL_GetError();
@@ -90,9 +90,9 @@ SdlWindow createSdlWindow(const WindowSettings& windowSettings) {
     flags |= windowSettings.fullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0;
     flags |= SDL_WINDOW_RESIZABLE;
 
-	if(windowSettings.useBilinearInterpolation){
-		SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1");
-	}
+    if (windowSettings.useBilinearInterpolation) {
+        SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1");
+    }
     //    SDL_SetHint(SDL_HINT_RENDER_VSYNC, "1");
 
     auto sdlWin =
@@ -106,11 +106,10 @@ SdlWindow createSdlWindow(const WindowSettings& windowSettings) {
         throw std::runtime_error{error};
     }
 
-    return std::unique_ptr<SDL_Window, void (*)(SDL_Window*)>(
-        sdlWin, &SDL_DestroyWindow);
+    return {sdlWin, &SDL_DestroyWindow};
 }
 
-SdlRenderer createSdlRenderer(const SdlWindow& sdlWindow) {
+auto createSdlRenderer(const SdlWindow& sdlWindow) -> SdlRenderer {
     auto renderer =
         SDL_CreateRenderer(sdlWindow.get(), -1, SDL_RENDERER_ACCELERATED);
     if (!renderer) {
@@ -120,17 +119,15 @@ SdlRenderer createSdlRenderer(const SdlWindow& sdlWindow) {
         throw std::runtime_error{error};
     }
 
-    return std::unique_ptr<SDL_Renderer, void (*)(SDL_Renderer*)>(
-        renderer, &SDL_DestroyRenderer);
+	return {renderer, &SDL_DestroyRenderer};
 }
 
-SdlTexture createTexture(SDL_Texture* texture) {
-    return std::unique_ptr<SDL_Texture, void (*)(SDL_Texture*)>(
-        texture, &SDL_DestroyTexture);
+auto createTexture(SDL_Texture* texture) -> SdlTexture {
+	return {texture, &SDL_DestroyTexture};
 }
 
-std::optional<SdlTexture> createTexture(const SdlRenderer& renderer,
-                                        const std::string& filename) {
+auto createTexture(const SdlRenderer& renderer, const std::string& filename)
+    -> std::optional<SdlTexture> {
     auto tex = IMG_LoadTexture(renderer.get(), filename.c_str());
     if (tex) {
         return createTexture(tex);
@@ -138,7 +135,7 @@ std::optional<SdlTexture> createTexture(const SdlRenderer& renderer,
     return std::nullopt;
 }
 
-std::string memoryToHumanReadable(long bytes, int decimalPrecision) {
+auto memoryToHumanReadable(long bytes, int decimalPrecision) -> std::string {
     constexpr static int kKilobyte = 1024;
     constexpr static int kMegabyte = 1024 * kKilobyte;
     constexpr static int kGigabyte = 1024 * kMegabyte;
@@ -165,7 +162,7 @@ std::string memoryToHumanReadable(long bytes, int decimalPrecision) {
     return ss.str();
 }
 
-bool loadGifAnimation(SdlRenderer& renderer, ImageHeader& imageHeader) {
+auto loadGifAnimation(SdlRenderer& renderer, ImageHeader& imageHeader) -> bool {
     // Check if the file is a GIF
     SDL_RWops* io = SDL_RWFromFile(imageHeader.fileAdress.c_str(), "rb");
     if (io == nullptr) {
@@ -179,7 +176,7 @@ bool loadGifAnimation(SdlRenderer& renderer, ImageHeader& imageHeader) {
     // Load the GIF animation
     IMG_Animation* gifAnimation =
         IMG_LoadAnimation(imageHeader.fileAdress.c_str());
-    if (gifAnimation == NULL) {
+    if (gifAnimation == nullptr) {
         return false;
     }
 

@@ -91,6 +91,6 @@ struct SdlContext {
     bool showBar{true};
 	bool contiguousView{false};
 	int fps{24};
-    int currentImage{0};
+	int currentImage{0};
     bool exit{false};
 };

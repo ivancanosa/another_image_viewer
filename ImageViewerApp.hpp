@@ -9,7 +9,7 @@ class ImageViewerApp {
   public:
     ImageViewerApp(SdlContext&& sdlContextArg)
         : sdlContext(std::move(sdlContextArg)),
-          imageLoaderPolicy(sdlContext.imagesVector.size()) {
+          imageLoaderPolicy((int)sdlContext.imagesVector.size()) {
     }
 
     void drawBottomBarBackground();
@@ -75,7 +75,7 @@ void ImageViewerApp::drawBottomLeftText(const std::string& text) {
     int barHeight     = 50;
     int barY          = windowHeight - barHeight;
     SDL_Rect textRect = {10, barY + 10, textSurface->w, textSurface->h};
-    SDL_RenderCopy(sdlContext.renderer.get(), textTexture, NULL, &textRect);
+    SDL_RenderCopy(sdlContext.renderer.get(), textTexture, nullptr, &textRect);
     SDL_DestroyTexture(textTexture);
     SDL_FreeSurface(textSurface);
 }
@@ -97,7 +97,7 @@ void ImageViewerApp::drawBottomRightText(const std::string& text) {
     int barY          = windowHeight - barHeight;
     SDL_Rect textRect = {windowWidth - 10 - textSurface->w, barY + 10,
                          textSurface->w, textSurface->h};
-    SDL_RenderCopy(sdlContext.renderer.get(), textTexture, NULL, &textRect);
+    SDL_RenderCopy(sdlContext.renderer.get(), textTexture, nullptr, &textRect);
     SDL_DestroyTexture(textTexture);
     SDL_FreeSurface(textSurface);
 }
@@ -291,9 +291,9 @@ void ImageViewerApp::drawImageViewer() {
     // Calculate the aspect ratio of the image
     float aspectRatio;
     if (imageViewerState.rotation == 1 || imageViewerState.rotation == 3) {
-        aspectRatio = (float)image.height / image.width;
+        aspectRatio = (float)image.height / (float)image.width;
     } else {
-        aspectRatio = (float)image.width / image.height;
+        aspectRatio = (float)image.width / (float)image.height;
     }
 
     // Calculate the width and height of the image to be drawn
@@ -301,15 +301,15 @@ void ImageViewerApp::drawImageViewer() {
     if (imageViewerState.fitHeight) {
         // Fit the image to the height of the window
         drawHeight = windowHeight;
-        drawWidth  = (int)(drawHeight * aspectRatio);
+        drawWidth  = (int)((float)drawHeight * aspectRatio);
     } else if (imageViewerState.fitWidth) {
         // Fit the image to the width of the window
         drawWidth  = windowWidth;
-        drawHeight = (int)(drawWidth / aspectRatio);
+        drawHeight = (int)((float)drawWidth / aspectRatio);
     } else {
         // Use the zoom and panning values to calculate the width
-        drawWidth  = (int)(image.width * imageViewerState.zoom);
-        drawHeight = (int)(image.height * imageViewerState.zoom);
+        drawWidth  = (int)((float)image.width * imageViewerState.zoom);
+        drawHeight = (int)((float)image.height * imageViewerState.zoom);
     }
     // Swap the width and height if the rotation is 1 or 3 and is fit
     if ((imageViewerState.rotation == 1 || imageViewerState.rotation == 3) &&
@@ -347,7 +347,7 @@ void ImageViewerApp::drawImageViewer() {
     if (imageViewerState.fitWidth || imageViewerState.fitHeight) {
         sdlContext.imageViewerState.zoom =
             (float)drawWidth /
-            sdlContext.imagesVector[sdlContext.currentImage].width;
+            (float)sdlContext.imagesVector[sdlContext.currentImage].width;
     }
 
     // Flip the image if needed
@@ -374,7 +374,7 @@ void ImageViewerApp::drawImageViewer() {
                              .get(),
                          nullptr, &imageRect, angle, nullptr, flip);
         image.animation.value().actualFrame =
-            (image.animation.value().actualFrame + 1) %
+            (int)(image.animation.value().actualFrame + 1) %
             image.animation.value().frames.size();
         sdlContext.fps = image.animation.value().fps;
     }
@@ -444,16 +444,17 @@ void ImageViewerApp::drawImageViewerContiguous() {
         } else {
             return false;
         }
-		return isRectInsideWindow(imageRect);
+        return isRectInsideWindow(imageRect);
     };
 
     const auto& fordwardDraw = [&](auto index) {
-        auto accHeight = (windowHeight - windowHeight * zoom) / 2. +
-                         sdlContext.imageViewerState.panningY;
-        accHeight += windowHeight * zoom;
+        auto accHeight =
+            ((float)windowHeight - (float)windowHeight * zoom) / 2. +
+            sdlContext.imageViewerState.panningY;
+        accHeight += (float)windowHeight * zoom;
         while (index <= sdlContext.imagesVector.size()) {
             const auto sucess = drawImage(index, accHeight, false);
-            accHeight += windowHeight * zoom;
+            accHeight += (float)windowHeight * zoom;
             index += 1;
             if (!sucess) {
                 break;
@@ -462,12 +463,13 @@ void ImageViewerApp::drawImageViewerContiguous() {
     };
 
     const auto& backwardsDraw = [&](auto index) {
-        auto accHeight = (windowHeight - windowHeight * zoom) / 2. +
-                         sdlContext.imageViewerState.panningY;
-        accHeight -= windowHeight * zoom;
+        auto accHeight =
+            ((float)windowHeight - (float)windowHeight * zoom) / 2. +
+            sdlContext.imageViewerState.panningY;
+        accHeight -= (float)windowHeight * zoom;
         while (index >= 0) {
             const auto sucess = drawImage(index, accHeight, false);
-            accHeight -= windowHeight * zoom;
+            accHeight -= (float)windowHeight * zoom;
             index -= 1;
             if (!sucess) {
                 break;
@@ -482,12 +484,12 @@ void ImageViewerApp::drawImageViewerContiguous() {
     backwardsDraw(index - 1);
 
     while (index < newCurrentImage) {
-        sdlContext.imageViewerState.panningY += windowHeight * zoom;
+        sdlContext.imageViewerState.panningY += int((float)windowHeight * zoom);
         index += 1;
     }
 
     while (index > newCurrentImage) {
-        sdlContext.imageViewerState.panningY -= windowHeight * zoom;
+        sdlContext.imageViewerState.panningY -= int((float)windowHeight * zoom);
         index -= 1;
     }
 
@@ -540,11 +542,12 @@ void ImageViewerApp::mainLoop() {
         }
         sdlContext.fps = 24;
     }
-	if(sdlContext.windowSettings.useCacheFile){
-		CacheFilenames cacheFilenames;
-		cacheFilenames.saveActualImagePosition(sdlContext);
-	}
-	if(sdlContext.windowSettings.outputFilename){
-		std::cout << sdlContext.imagesVector[sdlContext.currentImage].fileAdress << "\n";
-	}
+    if (sdlContext.windowSettings.useCacheFile) {
+        CacheFilenames cacheFilenames;
+        cacheFilenames.saveActualImagePosition(sdlContext);
+    }
+    if (sdlContext.windowSettings.outputFilename) {
+        std::cout << sdlContext.imagesVector[sdlContext.currentImage].fileAdress
+                  << "\n";
+    }
 }

@@ -12,8 +12,8 @@
 #endif
 
 // Function to create a font
-std::optional<SdlFont> createFont(const std::vector<std::string>& fontNames,
-                                  float fontSize = 8) {
+auto createFont(const std::vector<std::string>& fontNames,
+                                  float fontSize = 8) -> std::optional<SdlFont> {
     // Try to find and open each font in the list
     for (const std::string& fontName : fontNames) {
 // Use preprocessor directives to compile the appropriate code for getting the
@@ -38,17 +38,17 @@ std::optional<SdlFont> createFont(const std::vector<std::string>& fontNames,
         FcPatternAddDouble(pattern, FC_SIZE, fontSize);
 
         // Find the font file on the system
-        FcConfigSubstitute(NULL, pattern, FcMatchPattern);
+        FcConfigSubstitute(nullptr, pattern, FcMatchPattern);
         FcDefaultSubstitute(pattern);
         FcResult result;
-        FcPattern* fontPattern = FcFontMatch(NULL, pattern, &result);
+        FcPattern* fontPattern = FcFontMatch(nullptr, pattern, &result);
 
         // Extract the font file path from the pattern
         FcChar8* fontFile;
         FcPatternGetString(fontPattern, FC_FILE, 0, &fontFile);
 
         // Open the font with SDL_ttf
-        TTF_Font* font = TTF_OpenFont((const char*)fontFile, fontSize);
+        TTF_Font* font = TTF_OpenFont((const char*)fontFile, (int)fontSize);
 
         // Destroy the fontconfig pattern
         FcPatternDestroy(pattern);

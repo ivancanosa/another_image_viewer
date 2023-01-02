@@ -41,6 +41,8 @@ test: $(BUILDDIR)
 
 install: $(BUILDDIR)
 	cp ./$(TARGET) $(HOME)/.local/bin/$(MAIN)
+	cp aiv.desktop $(HOME)/.local/share/applications/aiv.desktop
+#	cp aiv.desktop /usr/share/applications/aiv.desktop
 
 $(BUILDDIR): meson.build
 	meson $(BUILDDIR)

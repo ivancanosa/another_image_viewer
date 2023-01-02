@@ -22,7 +22,7 @@
 #include <sys/fcntl.h>
 #endif
 
-SdlContext parseCommandLineArguments(int argc, char** argv) {
+auto parseCommandLineArguments(int argc, char** argv) -> SdlContext {
     SdlWindow window(nullptr, [](SDL_Window* window) {});
     SdlRenderer renderer(nullptr, [](SDL_Renderer* renderer) {});
     SdlContext sdlContext{std::move(window), std::move(renderer)};
@@ -108,12 +108,12 @@ SdlContext parseCommandLineArguments(int argc, char** argv) {
     return sdlContext;
 }
 
-std::vector<std::string> getFilenamesFromArguments(int argc, char** argv) {
+auto getFilenamesFromArguments(int argc, char** argv) -> std::vector<std::string> {
     std::vector<std::string> args;
     // Iterate over the command-line arguments
     for (int i = 1; i < argc; ++i) {
         if (argv[i][0] != '-') {
-            args.push_back(argv[i]);
+            args.emplace_back(argv[i]);
         }
     }
 
@@ -131,14 +131,14 @@ std::vector<std::string> getFilenamesFromArguments(int argc, char** argv) {
     return args;
 }
 
-SdlContext createSdlContext(int argc, char** argv) {
+auto createSdlContext(int argc, char** argv) -> SdlContext {
     SdlContext sdlContext = parseCommandLineArguments(argc, argv);
     if (TTF_Init() == -1) {
         assert(false && "An error occurred while initializing SDL_ttf");
     }
     std::vector<std::string> fontNames = {"DejaVu Sans", "Arial",
                                           "Liberation Sans", "FreeMono"};
-    auto font                          = createFont(fontNames, sdlContext.style.fontSize);
+    auto font                          = createFont(fontNames, (float)sdlContext.style.fontSize);
 
     if (!font) {
         std::cerr << "Font not found" << std::endl;
@@ -153,7 +153,7 @@ SdlContext createSdlContext(int argc, char** argv) {
 
     if (sdlContext.windowSettings.useCacheFile) {
         CacheFilenames cacheFilenames;
-        sdlContext.currentImage = cacheFilenames.existsString(files);
+        sdlContext.currentImage = (int)cacheFilenames.existsString(files);
     }
     if (files.size() == 0) {
         return;

@@ -37,7 +37,7 @@ class CacheFilenames {
 
         filename = aiv_dir + "/imageNamesCache";
     }
-    std::size_t existsString(const std::vector<std::string>& vector);
+    auto existsString(const std::vector<std::string>& vector) -> std::size_t;
     void saveActualImagePosition(const SdlContext& sdlContext);
 
   private:
@@ -89,8 +89,8 @@ void CacheFilenames::saveActualImagePosition(const SdlContext& sdlContext) {
     file.close();
 }
 
-std::size_t
-CacheFilenames::existsString(const std::vector<std::string>& vector) {
+auto
+CacheFilenames::existsString(const std::vector<std::string>& vector) -> std::size_t {
     if (filename == "") {
         return 0;
     }
@@ -133,7 +133,7 @@ CacheFilenames::existsString(const std::vector<std::string>& vector) {
             file.close();
 
             // Delete line from the cache
-            deleteLineFromFile(filename, lineNumber);
+            deleteLineFromFile(filename, (int)lineNumber);
             return position;
         }
     }
