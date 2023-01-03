@@ -9,33 +9,46 @@
 #include <unordered_set>
 #include <vector>
 
+#include "monads.hpp"
 #include <sys/stat.h>
 
 class CacheFilenames {
   public:
     CacheFilenames() {
-        const char* cache_dirPtr = getenv("XDG_CACHE_HOME");
-        std::string cache_dir;
-        if (cache_dirPtr == nullptr) {
-            cache_dirPtr = getenv("HOME");
+        using EitherT = Either<std::string, int>;
+
+        const auto loadXdgPath = [](const auto& _) -> EitherT {
+            const char* cache_dirPtr = getenv("XDG_CACHE_HOME");
             if (cache_dirPtr == nullptr) {
-                return;
+                return 0;
             }
-            cache_dir = std::string(cache_dirPtr) + "/.cache";
-        } else {
-            cache_dir = std::string(cache_dirPtr);
-        }
+            return std::string(cache_dirPtr);
+        };
 
-        // Create the "iv" directory if it doesn't already exist
-        std::string aiv_dir = cache_dir + "/aiv";
-        int mkdir_result    = mkdir(aiv_dir.c_str(), 0700);
-        if (mkdir_result != 0 && errno != EEXIST) {
-            std::cerr << "Error creating directory '" << aiv_dir
-                      << "': " << strerror(errno) << std::endl;
-            return;
-        }
+        const auto loadDefaultPath = [](const auto& _) -> EitherT {
+            const char* cache_dirPtr = getenv("HOME");
+            if (cache_dirPtr == nullptr) {
+                return 0;
+            }
+            return std::string(cache_dirPtr) + "/.cache";
+        };
 
-        filename = aiv_dir + "/imageNamesCache";
+        const auto createAivDir = [](const auto& cache_dir) -> std::string {
+            std::string aiv_dir = cache_dir + "/aiv";
+            int mkdir_result    = mkdir(aiv_dir.c_str(), 0700);
+            if (mkdir_result != 0 && errno != EEXIST) {
+                std::cerr << "Error creating directory '" << aiv_dir
+                          << "': " << strerror(errno) << std::endl;
+                return "";
+            }
+			return aiv_dir;
+        };
+
+		const auto cacheDir = EitherT(0) | loadXdgPath | loadDefaultPath;
+		if(std::holds_alternative<std::string>(cacheDir)){
+			const auto aivCache = createAivDir(std::get<std::string>(cacheDir));
+			filename =  aivCache + "/imageNamesCache";
+		}
     }
     auto existsString(const std::vector<std::string>& vector) -> std::size_t;
     void saveActualImagePosition(const SdlContext& sdlContext);
@@ -89,8 +102,8 @@ void CacheFilenames::saveActualImagePosition(const SdlContext& sdlContext) {
     file.close();
 }
 
-auto
-CacheFilenames::existsString(const std::vector<std::string>& vector) -> std::size_t {
+auto CacheFilenames::existsString(const std::vector<std::string>& vector)
+    -> std::size_t {
     if (filename == "") {
         return 0;
     }
