@@ -58,11 +58,11 @@ class CommandExecuter {
   public:
     CommandExecuter(ConfigStruct configStruct)
         : systemCommands{configStruct.keyCommands},
-          generalCommands{{"f", toggleFullscreen},   {"n", nextImage},
-                          {" ", toggleSelectedImage},          {"p", previousImage},
-                          {"gg", goToImagePosition}, {"G", goLastImage},
-                          {"r", reloadCurrentImage}, {"\n", toggleViewerState},
-                          {"b", toggleBottomBar},    {"q", exitCommand}},
+          generalCommands{{"f", toggleFullscreen},    {"n", nextImage},
+                          {" ", toggleSelectedImage}, {"p", previousImage},
+                          {"gg", goToImagePosition},  {"G", goLastImage},
+                          {"r", reloadCurrentImage},  {"\n", toggleViewerState},
+                          {"b", toggleBottomBar},     {"q", exitCommand}},
 
           gridImagesCommands{{"+", zoomUpGrid},   {"-", zoomDownGrid},
                              {"j", moveDownGrid}, {"k", moveUpGrid},
@@ -119,8 +119,14 @@ class CommandExecuter {
             }
         };
 
-        const auto buildRegex = [&](const auto& map, const auto& tr) {
-            std::string patternString = "^(\\d*)(";
+        const auto buildRegex = [&](const auto& map, const auto& tr,
+                                    bool num = true) {
+            std::string patternString;
+            if (num) {
+                patternString = "^(\\d*)(";
+            } else {
+                patternString = "^(";
+            }
             bool first{true};
             for (const auto& [key, _] : map) {
                 addKeyToString(first, key, patternString, tr);
@@ -142,8 +148,8 @@ class CommandExecuter {
         regexViewer      = buildRegex(imageViewerCommands, identity);
         maybeRegexGrid   = buildRegex(gridImagesCommands, wordToAllSubstring);
         maybeRegexViewer = buildRegex(imageViewerCommands, wordToAllSubstring);
-        regexSystemCommands      = buildRegex(systemCommands, identity);
-        maybeRegexSystemCommands = buildRegex(systemCommands, identity);
+        regexSystemCommands      = buildRegex(systemCommands, identity, false);
+        maybeRegexSystemCommands = buildRegex(systemCommands, wordToAllSubstring, false);
     }
 
     void matchCommand(SdlContext& context, std::string& inputCommand) {
@@ -213,14 +219,15 @@ class CommandExecuter {
 // **************************************************************************
 
 void executeSystemCommand(SdlContext& sdlContext, const std::string& command) {
-	const auto& filename = sdlContext.imagesVector[sdlContext.currentImage].fileAdress;
-	std::string filenames;
-	for(const auto& s: sdlContext.selectedImages){
-		filenames += sdlContext.imagesVector[s].fileAdress + " ";
-	}
+    const auto& filename =
+        sdlContext.imagesVector[sdlContext.currentImage].fileAdress;
+    std::string filenames;
+    for (const auto& s : sdlContext.selectedImages) {
+        filenames += sdlContext.imagesVector[s].fileAdress + " ";
+    }
 
     setenv("AIV_CURRENT_IMAGE", filename.c_str(), 1);
-	setenv("AIV_SELECTED_IMAGES", filenames.c_str(), 1);
+    setenv("AIV_SELECTED_IMAGES", filenames.c_str(), 1);
     std::system(command.c_str());
 }
 
@@ -229,21 +236,21 @@ void toggleFullscreen(SdlContext& sdlContext, int num) {
         !sdlContext.windowSettings.fullscreen;
 }
 
-void toggleSelectedImage(SdlContext& sdlContext, int num){
-	auto imageId = sdlContext.currentImage;
-	auto& set = sdlContext.selectedImages;
-	if(set.find(imageId) == set.end()){
-		set.insert(imageId);
-	}else{
-		set.erase(imageId);
-	}
+void toggleSelectedImage(SdlContext& sdlContext, int num) {
+    auto imageId = sdlContext.currentImage;
+    auto& set    = sdlContext.selectedImages;
+    if (set.find(imageId) == set.end()) {
+        set.insert(imageId);
+    } else {
+        set.erase(imageId);
+    }
 
-	nextImage(sdlContext, num);
+    nextImage(sdlContext, num);
 }
 
 void nextImage(SdlContext& sdlContext, int num) {
     int size = (int)sdlContext.imagesVector.size();
-    num      = num == 0 ? 1 : num;
+    num = num == 0 ? 1 : num;
     sdlContext.currentImage =
         std::clamp(sdlContext.currentImage + num, 0, size - 1);
 }
