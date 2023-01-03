@@ -13,6 +13,7 @@
 #include "filesUtils.hpp"
 #include "sdlUtils.hpp"
 #include "typesDefinition.hpp"
+#include "parseConfig.hpp"
 
 #ifdef _WIN32
 // Maybe some window libraries
@@ -166,6 +167,9 @@ auto createSdlContext(int argc, char** argv) -> SdlContext {
     }
     sdlContext.window   = std::move(window);
     sdlContext.renderer = std::move(renderer);
+
+	ParseConfig parseConfig;
+	sdlContext.configStruct = parseConfig.parseConfigFile();
 
     return sdlContext;
 }

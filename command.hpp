@@ -2,9 +2,15 @@
 
 #include "typesDefinition.hpp"
 #include <algorithm>
+#include <cstdlib>
 #include <iostream>
 #include <regex>
+#include <stdlib.h>
 #include <unordered_map>
+
+//******** Image viewer commands *********
+
+void executeSystemCommand(SdlContext& sdlContext, const std::string& command);
 
 //******** General commands ***********
 
@@ -49,8 +55,9 @@ void toggleContiguousView(SdlContext& sdlContext, int num);
 
 class CommandExecuter {
   public:
-    CommandExecuter()
-        : generalCommands{{"f", toggleFullscreen},   {"n", nextImage},
+    CommandExecuter(ConfigStruct configStruct)
+        : systemCommands{configStruct.keyCommands},
+          generalCommands{{"f", toggleFullscreen},   {"n", nextImage},
                           {" ", nextImage},          {"p", previousImage},
                           {"gg", goToImagePosition}, {"G", goLastImage},
                           {"r", reloadCurrentImage}, {"\n", toggleViewerState},
@@ -134,6 +141,8 @@ class CommandExecuter {
         regexViewer      = buildRegex(imageViewerCommands, identity);
         maybeRegexGrid   = buildRegex(gridImagesCommands, wordToAllSubstring);
         maybeRegexViewer = buildRegex(imageViewerCommands, wordToAllSubstring);
+        regexSystemCommands      = buildRegex(systemCommands, identity);
+        maybeRegexSystemCommands = buildRegex(systemCommands, identity);
     }
 
     void matchCommand(SdlContext& context, std::string& inputCommand) {
@@ -162,18 +171,22 @@ class CommandExecuter {
             }
         };
 
-        if (context.isGridImages) {
-            if (match(maybeRegexGrid)) {
+        bool maybeCommand = match(maybeRegexSystemCommands) ||
+                            (context.isGridImages ? match(maybeRegexGrid)
+                                                  : match(maybeRegexViewer));
+        if (maybeCommand) {
+            std::smatch match;
+            if (std::regex_match(inputCommand, match, regexSystemCommands)) {
+                executeSystemCommand(context, systemCommands[match[0]]);
+                inputCommand = "";
+            }
+            if (context.isGridImages) {
                 matchAndExecute(regexGrid, gridImagesCommands);
             } else {
-                inputCommand = "";
+                matchAndExecute(regexViewer, imageViewerCommands);
             }
         } else {
-            if (match(maybeRegexViewer)) {
-                matchAndExecute(regexViewer, imageViewerCommands);
-            } else {
-                inputCommand = "";
-            }
+            inputCommand = "";
         }
     }
 
@@ -182,6 +195,10 @@ class CommandExecuter {
     std::regex regexViewer;
     std::regex maybeRegexGrid;
     std::regex maybeRegexViewer;
+    std::regex maybeRegexSystemCommands;
+    std::regex regexSystemCommands;
+
+    std::unordered_map<std::string, std::string> systemCommands;
 
     std::unordered_map<std::string, void (*)(SdlContext&, int)> generalCommands;
     std::unordered_map<std::string, void (*)(SdlContext&, int)>
@@ -193,6 +210,12 @@ class CommandExecuter {
 // **************************************************************************
 // ************************* Commands implementation ************************
 // **************************************************************************
+
+void executeSystemCommand(SdlContext& sdlContext, const std::string& command) {
+	const auto& filename = sdlContext.imagesVector[sdlContext.currentImage].fileAdress;
+    setenv("AIV_FILENAME", filename.c_str(), 1);
+    std::system(command.c_str());
+}
 
 void toggleFullscreen(SdlContext& sdlContext, int num) {
     sdlContext.windowSettings.fullscreen =

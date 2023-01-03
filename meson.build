@@ -9,8 +9,9 @@ incdir = include_directories('.')
 sdl2_dep = dependency('sdl2')
 sdl2_image_dep = dependency('sdl2_image')
 sdl2_ttf_dep = dependency('sdl2_ttf')
+json_dep = dependency('nlohmann_json')
 
-all_deps = [sdl2_dep, sdl2_image_dep, sdl2_ttf_dep]
+all_deps = [sdl2_dep, sdl2_image_dep, sdl2_ttf_dep, json_dep]
 
 if host_machine.system() != 'windows'
   fontconfig_dep = dependency('fontconfig', required: true)

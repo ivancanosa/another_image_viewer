@@ -9,7 +9,8 @@ class ImageViewerApp {
   public:
     ImageViewerApp(SdlContext&& sdlContextArg)
         : sdlContext(std::move(sdlContextArg)),
-          imageLoaderPolicy((int)sdlContext.imagesVector.size()) {
+          imageLoaderPolicy((int)sdlContext.imagesVector.size()),
+          commandExecuter(sdlContext.configStruct) {
     }
 
     void drawBottomBarBackground();
@@ -250,6 +251,18 @@ void ImageViewerApp::getInputCommand() {
     } else if (event.type == SDL_KEYDOWN) {
         // Check if a key was pressed
         SDL_Keycode key = event.key.keysym.sym;
+
+        if ((event.key.keysym.mod & KMOD_CTRL) &&
+            event.key.keysym.sym != SDLK_LCTRL &&
+            event.key.keysym.sym != SDLK_RCTRL) {
+            inputCommand += "<C>";
+            if (key >= 0 && key <= 127 && isalnum(key)) {
+                const char* keyName  = SDL_GetKeyName(key);
+                const char asciiChar = keyName[0];
+                inputCommand += std::tolower(asciiChar);
+            }
+        }
+
         switch (key) {
         case SDLK_RETURN:
             // Add a newline character to the inputCommand string
@@ -278,7 +291,6 @@ void ImageViewerApp::getInputCommand() {
         commandExecuter.matchCommand(sdlContext, inputCommand);
     }
 }
-
 void ImageViewerApp::drawImageViewer() {
     const auto& renderer = sdlContext.renderer;
     auto& image          = sdlContext.imagesVector[sdlContext.currentImage];
