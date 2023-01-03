@@ -48,7 +48,7 @@ The \<C\> symbol is for detecting the Ctrl key. So, the previous file creates bi
 - AIV_SELECTED_IMAGES: A list of filenames of all selected images.
 You should not use a key binding that is the same to one of the program, or a super set of them. Using <C> is always safe because none of the program commands use that key.
 ## Requirements to compile
-clang 14.00+, meson, Make, Linux system.
+clang 14.00+, meson, Make, fontconfig, Linux system
 
 ## Keyboard input:
 All commands with the symbol \<N\> accepts an optional number to modify the command. By default the number is 1.
