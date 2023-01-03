@@ -90,6 +90,4 @@ All commands with the symbol \<N\> accepts an optional number to modify the comm
 
 ## TODO
 - Change "cacheFilenames.hpp" so it also works on windows.
-- Be able to insert system commands inside the image viewer. It would allow to perform arbitrary operations on selected images.
-- Key bindings so the user is able to execute arbitrary commands.
 - Add support for embedded in a X window.
