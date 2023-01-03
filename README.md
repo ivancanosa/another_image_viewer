@@ -30,14 +30,15 @@ The command is "aiv". You can insert as command line arguments the filenames or 
 
 ## Custom bindings
 The program search for the following config files in this order:
-- "$XDG_CONFIG_HOME/aiv/key_commands.json"
-- "$HOME/.config/aiv/key_commands.json"
+- "$XDG_CONFIG_HOME/aiv/key_commands.json".
+- "$HOME/.config/aiv/key_commands.json".
+
 The file is in json format, in which you writes pairs of the key mappings and the command to execute. The following is an example of possible key_commands.json file:
 ```
 {
     "keyCommands": {
 		"<C>y": "echo \"This is a command\"",
-        "<C>b": "echo $AIV_CURRENT_IMAGE",
+        	"<C>b": "echo $AIV_CURRENT_IMAGE",
 		"<C>n": "echo $AIV_SELECTED_IMAGES"
     }
 }
