@@ -43,7 +43,7 @@ The file is in json format, in which you writes pairs of the key mappings and th
     }
 }
 ```
-The <C> symbol is for detecting the Ctrl key. So, the previous file creates bindings for the keys "Ctrl+y", "Ctrl+b" and "Ctrl+n". Additionally, aiv exports the following environment variables to use in the system commands:
+The \<C\> symbol is for detecting the Ctrl key. So, the previous file creates bindings for the keys "Ctrl+y", "Ctrl+b" and "Ctrl+n". Additionally, aiv exports the following environment variables to use in the system commands:
 - AIV_CURRENT_IMAGE: Filename of the current image.
 - AIV_SELECTED_IMAGES: A list of filenames of all selected images.
 You should not use a key binding that is the same to one of the program, or a super set of them. Using <C> is always safe because none of the program commands use that key.
