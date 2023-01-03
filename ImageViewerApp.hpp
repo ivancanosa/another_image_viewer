@@ -143,24 +143,25 @@ void ImageViewerApp::drawGrid() {
         }
     };
 
-    const auto drawImageBorder = [&]() {
+    const auto drawImageBorder = [&](auto imageId, auto borderWidth,
+                                     auto borderColor) {
+        int drawImageRow    = imageId / numColumns;
+        int drawImageColumn = imageId % numColumns;
+
         if (!sdlContext.imagesVector.empty()) {
             SDL_Rect firstImageRect{
                 sdlContext.style.padding +
-                    imageColumn * (sdlContext.style.thumbnailSize +
-                                   sdlContext.style.padding) -
-                    sdlContext.style.selectionWidth,
+                    drawImageColumn * (sdlContext.style.thumbnailSize +
+                                       sdlContext.style.padding) -
+                    borderWidth,
                 sdlContext.style.padding +
-                    (imageRow - sdlContext.gridImagesState.rowsScroll) *
+                    (drawImageRow - sdlContext.gridImagesState.rowsScroll) *
                         (sdlContext.style.thumbnailSize +
                          sdlContext.style.padding) -
-                    sdlContext.style.selectionWidth,
-                sdlContext.style.thumbnailSize +
-                    2 * sdlContext.style.selectionWidth,
-                sdlContext.style.thumbnailSize +
-                    2 * sdlContext.style.selectionWidth};
+                    borderWidth,
+                sdlContext.style.thumbnailSize + 2 * borderWidth,
+                sdlContext.style.thumbnailSize + 2 * borderWidth};
 
-            auto borderColor = sdlContext.style.selectionColor;
             SDL_SetRenderDrawColor(sdlContext.renderer.get(), borderColor[0],
                                    borderColor[1], borderColor[2], 0xFF);
             SDL_RenderDrawRect(sdlContext.renderer.get(), &firstImageRect);
@@ -175,6 +176,12 @@ void ImageViewerApp::drawGrid() {
                 if (index >= sdlContext.imagesVector.size()) {
                     // we've reached the end of the images vector
                     return;
+                }
+                if (sdlContext.selectedImages.find(index) !=
+                    sdlContext.selectedImages.end()) {
+                    drawImageBorder(index,
+                                    sdlContext.style.selectedImageWidthBorder,
+                                    sdlContext.style.selectedImageColorBorder);
                 }
                 if (!sdlContext.imagesVector[index].thumbnail)
                     continue;
@@ -217,7 +224,9 @@ void ImageViewerApp::drawGrid() {
     };
 
     computeVerticalScroll();
-    drawImageBorder();
+    drawImageBorder(sdlContext.currentImage,
+                    sdlContext.style.currentImageWidthBorder,
+                    sdlContext.style.currentImageColorBorder);
     drawImagesGrid();
 }
 

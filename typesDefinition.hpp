@@ -48,12 +48,14 @@ struct Style {
     Color backgroundColor{30};
     int fontSize{14};
 
-    int selectionWidth{10};
-    Color selectionColor{255, 109, 18};
+    int currentImageWidthBorder{10};
+    Color currentImageColorBorder{255, 109, 18};
+
+    int selectedImageWidthBorder{5};
+    Color selectedImageColorBorder{43, 150, 18};
 };
 
 struct GridImagesState {
-    std::unordered_set<std::size_t> selectedImages{};
     int numColumns{1};
     int numRows{1};
     int rowsScroll{0};
@@ -100,6 +102,7 @@ struct SdlContext {
     bool contiguousView{false};
     int fps{24};
     int currentImage{0};
+    std::unordered_set<std::size_t> selectedImages{};
     bool exit{false};
 
     ConfigStruct configStruct;

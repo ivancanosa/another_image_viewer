@@ -24,6 +24,7 @@ void reloadCurrentImage(SdlContext& sdlContext, int num);
 void toggleBottomBar(SdlContext& sdlContext, int num);
 void toggleViewerState(SdlContext& sdlContext, int num);
 void exitCommand(SdlContext& sdlContext, int num);
+void toggleSelectedImage(SdlContext& sdlContext, int num);
 
 //******** Grid images commands ***********
 
@@ -58,7 +59,7 @@ class CommandExecuter {
     CommandExecuter(ConfigStruct configStruct)
         : systemCommands{configStruct.keyCommands},
           generalCommands{{"f", toggleFullscreen},   {"n", nextImage},
-                          {" ", nextImage},          {"p", previousImage},
+                          {" ", toggleSelectedImage},          {"p", previousImage},
                           {"gg", goToImagePosition}, {"G", goLastImage},
                           {"r", reloadCurrentImage}, {"\n", toggleViewerState},
                           {"b", toggleBottomBar},    {"q", exitCommand}},
@@ -213,13 +214,31 @@ class CommandExecuter {
 
 void executeSystemCommand(SdlContext& sdlContext, const std::string& command) {
 	const auto& filename = sdlContext.imagesVector[sdlContext.currentImage].fileAdress;
-    setenv("AIV_FILENAME", filename.c_str(), 1);
+	std::string filenames;
+	for(const auto& s: sdlContext.selectedImages){
+		filenames += sdlContext.imagesVector[s].fileAdress + " ";
+	}
+
+    setenv("AIV_CURRENT_IMAGE", filename.c_str(), 1);
+	setenv("AIV_SELECTED_IMAGES", filenames.c_str(), 1);
     std::system(command.c_str());
 }
 
 void toggleFullscreen(SdlContext& sdlContext, int num) {
     sdlContext.windowSettings.fullscreen =
         !sdlContext.windowSettings.fullscreen;
+}
+
+void toggleSelectedImage(SdlContext& sdlContext, int num){
+	auto imageId = sdlContext.currentImage;
+	auto& set = sdlContext.selectedImages;
+	if(set.find(imageId) == set.end()){
+		set.insert(imageId);
+	}else{
+		set.erase(imageId);
+	}
+
+	nextImage(sdlContext, num);
 }
 
 void nextImage(SdlContext& sdlContext, int num) {
