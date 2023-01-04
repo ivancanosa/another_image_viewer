@@ -46,6 +46,7 @@ The file is in json format, in which you writes pairs of the key mappings and th
 The \<C\> symbol is for detecting the Ctrl key. So, the previous file creates bindings for the keys "Ctrl+y", "Ctrl+b" and "Ctrl+n". Additionally, aiv exports the following environment variables to use in the system commands:
 - AIV_CURRENT_IMAGE: Filename of the current image.
 - AIV_SELECTED_IMAGES: A list of filenames of all selected images.
+
 You should not use a key binding that is the same to one of the program, or a super set of them. Using <C> is always safe because none of the program commands use that key.
 ## Requirements to compile
 clang 14.00+, meson, Make, fontconfig, Linux system
@@ -87,6 +88,13 @@ All commands with the symbol \<N\> accepts an optional number to modify the comm
 - make: builds the project
 - make install: builds and copies the executable to $(HOME)/.local/bin/aiv
 - make test: builds and executes the tests
+
+## Technical details
+- The fps of the application is fixed. It it only adjusted when viewing a gif animation.
+- There is only in memory the full size of images that the user are viewing, and destroyed when the user is no longer viewing them. Therefore, there is 0 images in memory in grid mode and 1 in the image view mode. In continuum view mode, there is only in memory the images that the user can see.
+- The thumbnails are always loaded once they have been computed, and only destroyed when the app closes.
+- In grid view mode, The app computes the thumbnails of the images that are forward of the cursor, excepts those out of view. When it finish, it do the same but with those behind the cursor. 
+- Since the program minimizes both the memory usage and IO operations, it is fast even if it is called with thousands of images.
 
 ## TODO
 - Change "cacheFilenames.hpp" so it also works on windows.
